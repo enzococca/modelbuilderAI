@@ -198,6 +198,7 @@ async def export_workflow(
         select(WorkflowExecutionRow)
         .where(WorkflowExecutionRow.workflow_id == workflow_id)
         .order_by(WorkflowExecutionRow.created_at.desc())
+        .limit(1)
     )
     execution = result.scalar_one_or_none()
     if not execution or not execution.results:
@@ -227,25 +228,29 @@ async def export_workflow(
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
-        # Use built-in Helvetica (supports latin chars)
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+
+        def _safe(text: str) -> str:
+            return text.encode("latin-1", "replace").decode("latin-1")
+
         pdf.set_font("Helvetica", "B", 16)
-        pdf.cell(0, 10, wf.name, new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(usable_w, 10, _safe(wf.name), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
         for nid, content in results.items():
             label = node_labels.get(nid, nid)
-            # Section heading
             pdf.set_font("Helvetica", "B", 13)
-            pdf.cell(0, 8, label, new_x="LMARGIN", new_y="NEXT")
+            pdf.set_x(pdf.l_margin)
+            pdf.cell(usable_w, 8, _safe(label), new_x="LMARGIN", new_y="NEXT")
             pdf.ln(2)
-            # Content
             pdf.set_font("Helvetica", "", 10)
             plain = _md_to_plain(str(content))
             for line in plain.splitlines():
                 if not line.strip():
                     pdf.ln(3)
                 else:
-                    pdf.multi_cell(0, 5, line.encode("latin-1", "replace").decode("latin-1"))
+                    pdf.set_x(pdf.l_margin)
+                    pdf.multi_cell(usable_w, 5, _safe(line))
             pdf.ln(6)
 
         buf = io.BytesIO(pdf.output())

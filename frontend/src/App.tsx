@@ -5,6 +5,7 @@ import { PipelineView } from '@/components/orchestrator/PipelineView';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { TutorialPage } from '@/components/tutorial/TutorialPage';
 import { SettingsPage } from '@/components/settings/SettingsPage';
+import { MascotBuddy } from '@/components/mascot/MascotBuddy';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
       {viewMode === 'analytics' && <AnalyticsDashboard />}
       {viewMode === 'tutorial' && <TutorialPage />}
       {viewMode === 'settings' && <SettingsPage />}
+      <MascotBuddy />
     </MainLayout>
   );
 }

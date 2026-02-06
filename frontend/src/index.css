@@ -57,3 +57,13 @@
     stroke-dashoffset: -10;
   }
 }
+
+/* Mascot buddy bobbing animation */
+@keyframes mascot-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
