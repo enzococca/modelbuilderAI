@@ -151,7 +151,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
             <div>
               <label className={labelStyles}>Tools</label>
               <div className="space-y-1">
-                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool'].map(tool => {
+                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool'].map(tool => {
                   const tools = (data.tools as string[]) ?? [];
                   return (
                     <label key={tool} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -329,6 +329,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="image_tool">Image Analysis</option>
                 <option value="ml_pipeline">ML Pipeline</option>
                 <option value="website_generator">Website Generator</option>
+                <option value="gis_tool">GIS Analysis</option>
               </select>
             </div>
 
@@ -480,6 +481,105 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
               <p className="text-xs text-gray-500">
                 Genera un sito web (HTML/CSS/JS) da code blocks o JSON. Output: file ZIP scaricabile.
               </p>
+            )}
+
+            {(data.tool as string) === 'gis_tool' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'info'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="info">Info (metadata)</option>
+                    <option value="vector_analysis">Vector Analysis</option>
+                    <option value="raster_analysis">Raster Analysis</option>
+                    <option value="dem_analysis">DEM Analysis (slope/aspect)</option>
+                    <option value="buffer">Buffer</option>
+                    <option value="map">Render Map</option>
+                    <option value="reproject">Reproject</option>
+                    <option value="overlay">Overlay</option>
+                  </select>
+                </div>
+                {(data.operation as string) === 'buffer' && (
+                  <div>
+                    <label className={labelStyles}>Buffer Distance (m)</label>
+                    <input
+                      type="number"
+                      min={1} max={100000} step={10}
+                      value={(data.distance as number) ?? 100}
+                      onChange={e => update('distance', parseFloat(e.target.value))}
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'reproject' && (
+                  <div>
+                    <label className={labelStyles}>Target CRS</label>
+                    <input
+                      value={(data.target_crs as string) ?? 'EPSG:4326'}
+                      onChange={e => update('target_crs', e.target.value)}
+                      placeholder="es. EPSG:4326, EPSG:32633"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'map' && (
+                  <>
+                    <div>
+                      <label className={labelStyles}>Title</label>
+                      <input
+                        value={(data.title as string) ?? ''}
+                        onChange={e => update('title', e.target.value)}
+                        placeholder="Titolo della mappa"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Colormap</label>
+                      <select
+                        value={(data.colormap as string) ?? 'viridis'}
+                        onChange={e => update('colormap', e.target.value)}
+                        className={selectStyles}
+                      >
+                        <option value="viridis">Viridis</option>
+                        <option value="terrain">Terrain</option>
+                        <option value="RdYlGn">Red-Yellow-Green</option>
+                        <option value="Blues">Blues</option>
+                        <option value="Reds">Reds</option>
+                        <option value="YlOrRd">Yellow-Orange-Red</option>
+                        <option value="Spectral">Spectral</option>
+                        <option value="coolwarm">Cool-Warm</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Color Column</label>
+                      <input
+                        value={(data.column as string) ?? ''}
+                        onChange={e => update('column', e.target.value)}
+                        placeholder="es. population, elevation (vuoto = default)"
+                        className={inputStyles}
+                      />
+                    </div>
+                  </>
+                )}
+                {(data.operation as string) === 'overlay' && (
+                  <div>
+                    <label className={labelStyles}>Overlay Type</label>
+                    <select
+                      value={(data.how as string) ?? 'intersection'}
+                      onChange={e => update('how', e.target.value)}
+                      className={selectStyles}
+                    >
+                      <option value="intersection">Intersection</option>
+                      <option value="union">Union</option>
+                      <option value="difference">Difference</option>
+                      <option value="symmetric_difference">Symmetric Difference</option>
+                    </select>
+                  </div>
+                )}
+              </>
             )}
 
             <div>

@@ -84,6 +84,13 @@ NODE_REGISTRY: list[NodeDefinition] = [
         description="Generate HTML/CSS/JS website projects as ZIP",
         default_data={"tool_name": "website_generator", "config": {}},
     ),
+    NodeDefinition(
+        type="tool",
+        label="GIS Analysis",
+        category="tools",
+        description="Geospatial analysis: shapefiles, geopackages, GeoTIFF, DEM, map generation",
+        default_data={"tool_name": "gis_tool", "config": {"operation": "info"}},
+    ),
     # Advanced nodes
     NodeDefinition(
         type="meta_agent",

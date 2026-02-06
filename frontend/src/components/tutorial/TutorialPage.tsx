@@ -180,9 +180,12 @@ export function TutorialPage() {
                 rows={[
                   ['Web Search', 'Cerca informazioni aggiornate su internet'],
                   ['File Reader', 'Legge PDF, DOCX, CSV, immagini'],
-                  ['Code Executor', 'Esegue codice Python in sandbox'],
+                  ['Code Executor', 'Esegue codice Python in sandbox (numpy, pandas, matplotlib, sklearn)'],
                   ['Database Query', 'Interroga database SQL'],
                   ['Image Analyzer', 'Analizza immagini con vision AI'],
+                  ['ML Pipeline', 'Addestra, predici, valuta modelli ML da CSV (scikit-learn)'],
+                  ['Website Generator', 'Genera siti web (HTML/CSS/JS) come file ZIP'],
+                  ['GIS Analysis', 'Analisi geospaziale: shapefile, geopackage, GeoTIFF, DEM, mappe'],
                 ]}
               />
             </Card>
@@ -193,9 +196,11 @@ export function TutorialPage() {
                 rows={[
                   ['Input', 'Punto di ingresso: testo, file, variabili'],
                   ['Output', 'Punto di uscita: risultato finale'],
-                  ['Condition', 'Branch if/else basato su contenuto'],
-                  ['Loop', 'Ripete fino a una condizione'],
+                  ['Condition', 'Branch if/else (contains, score, regex, length)'],
+                  ['Loop', 'Ripete fino a una condizione (keyword, score, LLM eval)'],
                   ['Aggregator', 'Combina risultati da branch paralleli'],
+                  ['Meta-Agent', 'Esegue un sub-workflow ricorsivamente (max 3 livelli)'],
+                  ['Chunker', 'Splitta testo lungo in chunk, processa ciascuno con un agente'],
                 ]}
               />
             </Card>
@@ -357,6 +362,155 @@ SE score < 8: feedback specifico con cosa manca e come migliorare`}</Prompt>
               <Prompt label="Blog Post (Sonnet):">{`Scrivi un blog post SEO-friendly: titolo H1, sottotitoli H2, intro hook, CTA finale. Markdown.`}</Prompt>
               <Prompt label="Twitter Thread (Haiku):">{`Thread 5-7 tweet: hook, punti chiave con dati, CTA, hashtag. Max 280 char/tweet.`}</Prompt>
             </Card>
+
+            {/* Tutorial 10 */}
+            <Card title="Tutorial 10 — Validazione Output" subtitle="Pattern Validate + Retry — genera, valida, correggi" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌─────────────────────────────────────────┐  ┌────────┐
+│ INPUT  │─>│          LOOP (max 3 iter)               │─>│ OUTPUT │
+│ Brief  │  │ Sonnet: Genera -> Haiku: Valida formato  │  │Validato│
+└────────┘  │    <── se invalido, feedback + retry ──  │  └────────┘
+             └─────────────────────────────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input fornisce il brief (es. "Scrivi un JSON con nome, eta, email")',
+                'Sonnet genera il contenuto nel formato richiesto',
+                'Haiku valida: controlla formato, completezza, correttezza',
+                'Se invalido: feedback specifico e rigenera (max 3 tentativi)',
+              ]} />
+              <Prompt label="Validatore (Haiku):">{`Valida se l'output rispetta il formato richiesto.
+Se VALIDO: rispondi solo "APPROVED"
+Se INVALIDO: spiega cosa manca e come correggerlo.`}</Prompt>
+            </Card>
+
+            {/* Tutorial 11 */}
+            <Card title="Tutorial 11 — Fallback Modello" subtitle="Pattern Fallback — Claude primario, GPT-4o di backup" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌───────────┐  ┌──────────────┐  ┌────────┐
+│ INPUT  │─>│  Sonnet  │─>│ Condition │─>│ GPT-4o       │─>│ OUTPUT │
+│  Task  │  │ Primario │  │ Qualita?  │  │ Backup       │  │        │
+└────────┘  └──────────┘  └───────────┘  └──────────────┘  └────────┘
+                                │ true ──────────────────────>│`}</Diagram>
+              <Steps items={[
+                'Sonnet prova per primo a completare il task',
+                'Il nodo Condition valuta la qualita della risposta (score >= 7)',
+                'Se OK (true): output diretto',
+                'Se scarso (false): GPT-4o rigenera da zero come backup',
+              ]} />
+              <Tip>Usa questo pattern per task critici dove serve un fallback. Costo extra solo quando il primario fallisce.</Tip>
+            </Card>
+
+            {/* Tutorial 12 */}
+            <Card title="Tutorial 12 — Quality Gate" subtitle="Pattern Quality Gate — score >= 7 o rigenera con feedback" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌─────────────────────────────────────────┐  ┌────────┐
+│ INPUT  │─>│          LOOP (max 3 iter)               │─>│ OUTPUT │
+│  Task  │  │ Sonnet: Genera -> Opus: Score 1-10       │  │  Best  │
+└────────┘  │   <── se score < 7, feedback + retry ──  │  └────────┘
+             └─────────────────────────────────────────┘`}</Diagram>
+              <Prompt label="Quality Scorer (Opus):">{`Valuta la qualita del testo (1-10) su: Completezza, Accuratezza, Chiarezza, Stile.
+SE score >= 7: rispondi "SCORE: N - APPROVED"
+SE score < 7: rispondi "SCORE: N - REJECTED" + feedback dettagliato per migliorare`}</Prompt>
+              <Tip>Il quality gate garantisce un livello minimo di qualita. Opus come giudice e la scelta migliore per valutazioni affidabili.</Tip>
+            </Card>
+
+            {/* Tutorial 13 */}
+            <Card title="Tutorial 13 — ML Pipeline" subtitle="Pattern ML — addestra e confronta modelli su CSV" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐    ┌──────────────────┐
+│ INPUT  │ ┌─>│ ML: Random Forest│──┐
+│  CSV   │─┤  └──────────────────┘  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+└────────┘ │  ┌──────────────────┐  ├─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
+           └─>│ ML: Grad.Boost.  │──┘  └────────────┘  │ Confronto│  └────────┘
+              └──────────────────┘                      └──────────┘`}</Diagram>
+              <Steps items={[
+                'Input: dati CSV (incolla o path al file)',
+                'Due nodi ML Pipeline in parallelo: Random Forest e Gradient Boosting',
+                'Aggregator unisce i risultati dei due training',
+                'Sonnet analizza e confronta le metriche dei due modelli',
+              ]} />
+              <Prompt label="Confronto Modelli (Sonnet):">{`Confronta i risultati dei due modelli ML.
+Indica quale performa meglio e perche, suggerendo il modello da usare in produzione.`}</Prompt>
+              <Tip>Supporta 5 tipi di modello: Random Forest, Gradient Boosting, Linear, SVM, KNN. Auto-detect classificazione vs regressione.</Tip>
+            </Card>
+
+            {/* Tutorial 14 */}
+            <Card title="Tutorial 14 — Website Generator" subtitle="Pattern Parallel — 3 specialisti generano un sito web completo" icon={BookOpen} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ Sonnet: HTML     │──┐
+           │  └──────────────────┘  │
+┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─┼─>│ Sonnet: CSS      │──┼─>│ AGGREGATOR │─>│ Website  │─>│ OUTPUT │
+│ Brief  │ │  └──────────────────┘  │  └────────────┘  │  Gen ZIP │  │  Sito  │
+└────────┘ │  ┌──────────────────┐  │                  └──────────┘  └────────┘
+           └─>│ Sonnet: JS       │──┘
+              └──────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input descrive il sito desiderato (es. "landing page per app di meditazione")',
+                '3 agenti in parallelo: HTML designer, CSS designer, JS developer',
+                'Aggregator combina i 3 output',
+                'Website Generator impacchetta tutto come ZIP scaricabile',
+              ]} />
+              <Tip>Ogni agente si concentra sul suo linguaggio. Il risultato e un file ZIP con index.html, style.css e script.js pronti.</Tip>
+            </Card>
+
+            {/* Tutorial 15 */}
+            <Card title="Tutorial 15 — Chunker Documento" subtitle="Pattern Chunker — splitta, analizza ogni chunk, sintetizza" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────────┐  ┌────────────────────────────┐  ┌─────────────┐  ┌────────┐
+│   INPUT    │─>│   CHUNKER (800 chars)      │─>│   Sonnet    │─>│ OUTPUT │
+│ Doc Lungo  │  │ Haiku analizza ogni chunk   │  │ Sintetizza  │  │Summary │
+└────────────┘  └────────────────────────────┘  └─────────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: documento lungo (testo, articolo, capitoli)',
+                'Chunker splitta in pezzi da 800 caratteri con 100 di overlap',
+                'Per ogni chunk, Haiku estrae riassunto + concetti chiave',
+                'Sonnet sintetizza tutti i riassunti in un executive summary finale',
+              ]} />
+              <Prompt label="Chunker (Haiku per chunk):">{`Per ogni chunk del documento, produci:
+1. Riassunto di 2-3 frasi
+2. Concetti chiave (lista puntata)
+3. Parole chiave principali`}</Prompt>
+              <Tip>Il Chunker e ideale per documenti troppo lunghi per un singolo contesto. L'overlap evita di perdere info ai confini dei chunk.</Tip>
+            </Card>
+
+            {/* Tutorial 16 */}
+            <Card title="Tutorial 16 — Meta-Agent" subtitle="Pattern Meta-Agent — sub-workflow ricorsivo" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────────┐  ┌─────────────────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─>│ Orchestratore│─>│    META-AGENT           │─>│  Editor  │─>│ OUTPUT │
+│ Task   │  │   Sonnet     │  │ ┌─────────────────────┐ │  │  Sonnet  │  │ Report │
+└────────┘  └──────────────┘  │ │ Sub: Ricercatore A  │ │  └──────────┘  └────────┘
+                               │ │ Sub: Ricercatore B  │ │
+                               │ │ Sub: Aggregator     │ │
+                               │ └─────────────────────┘ │
+                               └─────────────────────────┘`}</Diagram>
+              <Steps items={[
+                "L'Orchestratore scompone il task complesso in sotto-task",
+                'Il Meta-Agent esegue un sub-workflow interno (2 ricercatori + aggregator)',
+                "L'Editor finale compone il report usando tutto il materiale raccolto",
+                'Profondita massima configurabile (default: 3 livelli)',
+              ]} />
+              <Tip>Il Meta-Agent permette workflow ricorsivi: un workflow dentro un workflow. Utile per task molto complessi che richiedono sotto-pipeline dedicate.</Tip>
+            </Card>
+
+            {/* Tutorial 17 */}
+            <Card title="Tutorial 17 — GIS Analysis" subtitle="Pattern Parallel — analisi geospaziale con mappa" icon={BookOpen} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ GIS: Info        │──┐
+           │  └──────────────────┘  │
+┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─┼─>│ GIS: Analisi Vec.│──┼─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
+│ .gpkg  │ │  └──────────────────┘  │  └────────────┘  │ Report   │  │ +Mappa │
+└────────┘ │  ┌──────────────────┐  │                  └──────────┘  └────────┘
+           └─>│ GIS: Mappa       │──┘
+              └──────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: path a file GIS (shapefile, geopackage, GeoTIFF)',
+                '3 tool GIS in parallelo: info metadata, analisi vettoriale, render mappa',
+                'Aggregator combina tutti i risultati',
+                'Sonnet genera un report GIS professionale',
+              ]} />
+              <Prompt label="Report GIS (Sonnet):">{`Sei un esperto GIS. Crea un report che descriva:
+1. Il dataset (CRS, features, estensione)
+2. Statistiche geometriche (aree, lunghezze, centroidi)
+3. Pattern spaziali identificati
+4. Suggerimenti per ulteriori analisi`}</Prompt>
+              <Tip>Supporta: shapefile (.shp), geopackage (.gpkg), GeoTIFF (.tif). Operazioni: info, vector/raster/DEM analysis, buffer, overlay, reproject, map rendering.</Tip>
+            </Card>
           </div>
         </div>
 
@@ -395,7 +549,12 @@ SE score < 8: feedback specifico con cosa manca e come migliorare`}</Prompt>
 Router + Specialists:   Classifica -> Esperto giusto
 Loop + Condition:       Genera -> Critica -> Se OK esci, altrimenti ripeti
 Debate + Judge:         Pro vs Contro -> Giudice decide
-RAG + Agent:            Cerca nei documenti -> Rispondi con citazioni`}</Diagram>
+RAG + Agent:            Cerca nei documenti -> Rispondi con citazioni
+Validate + Retry:       Genera -> Valida formato -> Loop se invalido
+Quality Gate:           Genera -> Score qualita -> Rigenera se < soglia
+Chunker + Sintesi:      Splitta doc -> Analizza chunk -> Sintesi finale
+Meta-Agent + Pipeline:  Orchestratore -> Sub-workflow -> Editor finale
+GIS + Report:           Analisi vettori/raster -> Mappa -> Report AI`}</Diagram>
             </Card>
 
             <Card title="Errori Comuni da Evitare" icon={AlertTriangle} accent="red">

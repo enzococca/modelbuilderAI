@@ -31,6 +31,7 @@ const tutorials = [
   { id: '14', file: '14-website-generator.json', label: '14. Website Gen', desc: 'HTML+CSS+JS → ZIP' },
   { id: '15', file: '15-chunker-documento.json', label: '15. Chunker Doc', desc: 'Splitta → Analizza → Sintesi' },
   { id: '16', file: '16-meta-agent.json', label: '16. Meta-Agent', desc: 'Sub-workflow ricorsivo' },
+  { id: '17', file: '17-gis-analysis.json', label: '17. GIS Analysis', desc: 'Vettori + Raster → Mappa' },
 ];
 
 interface Props {

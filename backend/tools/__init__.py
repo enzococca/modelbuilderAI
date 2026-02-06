@@ -30,6 +30,7 @@ def _build_registry() -> dict[str, type[BaseTool]]:
     from tools.image_tool import ImageTool
     from tools.ml_pipeline import MLPipelineTool
     from tools.website_generator import WebsiteGeneratorTool
+    from tools.gis_tool import GISTool
     return {
         "web_search": WebSearchTool,
         "code_executor": CodeExecutorTool,
@@ -38,6 +39,7 @@ def _build_registry() -> dict[str, type[BaseTool]]:
         "image_tool": ImageTool,
         "ml_pipeline": MLPipelineTool,
         "website_generator": WebsiteGeneratorTool,
+        "gis_tool": GISTool,
     }
 
 
