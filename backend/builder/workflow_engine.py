@@ -346,6 +346,34 @@ class WorkflowEngine:
                 config["operation"] = data.get("operation", "read")
             elif tool_name == "image_tool":
                 config["operation"] = data.get("operation", "analyze")
+            elif tool_name == "ml_pipeline":
+                config["operation"] = data.get("operation", "train")
+                if data.get("modelType"):
+                    config["model_type"] = data["modelType"]
+                if data.get("targetColumn"):
+                    config["target_column"] = data["targetColumn"]
+                if data.get("modelName"):
+                    config["model_name"] = data["modelName"]
+            elif tool_name == "website_generator":
+                pass  # Uses input_text directly
+            elif tool_name == "gis_tool":
+                config["operation"] = data.get("operation", "info")
+                if data.get("analysis_type"):
+                    config["analysis_type"] = data["analysis_type"]
+                if data.get("distance"):
+                    config["distance"] = data["distance"]
+                if data.get("target_crs"):
+                    config["target_crs"] = data["target_crs"]
+                if data.get("title"):
+                    config["title"] = data["title"]
+                if data.get("colormap"):
+                    config["colormap"] = data["colormap"]
+                if data.get("column"):
+                    config["column"] = data["column"]
+                if data.get("how"):
+                    config["how"] = data["how"]
+                if data.get("band"):
+                    config["band"] = data["band"]
 
             # Also merge any explicit "config" dict from legacy format
             explicit_config = data.get("config", {})
