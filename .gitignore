@@ -39,3 +39,4 @@ frontend/.vite/
 # Old config
 .ralph/
 .ralphrc
+/.claude/

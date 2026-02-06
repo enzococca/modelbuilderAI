@@ -63,7 +63,7 @@ export function WorkflowCanvas() {
   const { currentWorkflow, setCurrentWorkflow, loadVersion } = useWorkflowStore();
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  // Listen for WebSocket workflow_status events
+  // Listen for WebSocket workflow_status and node_streaming events
   useEffect(() => {
     wsClient.connect();
 
@@ -92,7 +92,21 @@ export function WorkflowCanvas() {
       }
     });
 
-    return () => { unsub(); };
+    // Real-time per-node token streaming
+    const unsubStream = wsClient.on('node_streaming', (data: Record<string, unknown>) => {
+      const wfId = data.workflow_id as string;
+      if (currentWorkflow && wfId !== currentWorkflow.id) return;
+      const nodeId = data.node_id as string;
+      const partial = data.partial as string;
+
+      setExecutionResults(prev => ({
+        ...(prev || {}),
+        [nodeId]: partial,
+      }));
+      setShowResults(true);
+    });
+
+    return () => { unsub(); unsubStream(); };
   }, [currentWorkflow]);
 
   // Apply execution status to node classNames reactively
@@ -521,22 +535,25 @@ export function WorkflowCanvas() {
                 </span>
                 <div className="flex items-center gap-2">
                   {currentWorkflow && (
-                    <>
-                      <button
-                        onClick={() => exportWorkflowResults(currentWorkflow.id, 'markdown').catch(console.error)}
-                        className="text-xs text-gray-400 hover:text-white px-2 py-0.5 rounded hover:bg-gray-700"
-                        title="Scarica Markdown"
-                      >
-                        .md
-                      </button>
-                      <button
-                        onClick={() => exportWorkflowResults(currentWorkflow.id, 'zip').catch(console.error)}
-                        className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"
-                        title="Scarica ZIP"
-                      >
-                        <FileDown className="w-3.5 h-3.5" />
-                      </button>
-                    </>
+                    <div className="flex items-center gap-0.5">
+                      {([
+                        ['markdown', '.md', 'Markdown'],
+                        ['pdf', '.pdf', 'PDF'],
+                        ['docx', '.docx', 'Word'],
+                        ['csv', '.csv', 'CSV'],
+                        ['xlsx', '.xlsx', 'Excel'],
+                        ['zip', 'ZIP', 'ZIP'],
+                      ] as const).map(([fmt, label, title]) => (
+                        <button
+                          key={fmt}
+                          onClick={() => exportWorkflowResults(currentWorkflow.id, fmt).catch(console.error)}
+                          className="text-[10px] text-gray-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-gray-700"
+                          title={`Scarica ${title}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   )}
                   <button
                     onClick={() => setResultsExpanded(v => !v)}

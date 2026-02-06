@@ -99,15 +99,20 @@ export const runWorkflow = (id: string) => api.post(`/workflows/${id}/run`).then
 export const validateWorkflow = (id: string) => api.post(`/workflows/${id}/validate`).then(r => r.data);
 
 // Export workflow results
-export const exportWorkflowResults = async (id: string, format: 'zip' | 'markdown' = 'zip') => {
+export const exportWorkflowResults = async (
+  id: string,
+  format: 'zip' | 'markdown' | 'pdf' | 'docx' | 'csv' | 'xlsx' = 'zip',
+) => {
   const resp = await fetch(`/api/workflows/${id}/export?format=${format}`, { method: 'POST' });
   if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
   const blob = await resp.blob();
-  const ext = format === 'zip' ? 'zip' : 'md';
+  const extMap: Record<string, string> = {
+    zip: 'zip', markdown: 'md', pdf: 'pdf', docx: 'docx', csv: 'csv', xlsx: 'xlsx',
+  };
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `results.${ext}`;
+  a.download = `results.${extMap[format] || format}`;
   a.click();
   URL.revokeObjectURL(url);
 };

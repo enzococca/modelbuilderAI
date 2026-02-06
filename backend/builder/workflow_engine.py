@@ -52,6 +52,8 @@ class WorkflowEngine:
             self._outgoing_edges.setdefault(edge.source, []).append(edge)
         # Blocked edges (set by condition nodes to skip branches)
         self._blocked_edges: set[str] = set()
+        # Throttle tracking for streaming broadcasts
+        self._last_stream_time: dict[str, float] = {}
 
     @property
     def status(self) -> PipelineStatus:
@@ -296,8 +298,26 @@ class WorkflowEngine:
         import re
         return re.sub(r"```artifact\s*\n[\s\S]*?```", "[artifact rimosso]", text)
 
+    async def _stream_broadcast(self, node_id: str, chunk: str, partial: str) -> None:
+        """Broadcast a streaming token for a specific node (throttled)."""
+        if self._broadcast is None:
+            return
+        now = time.monotonic()
+        last = self._last_stream_time.get(node_id, 0.0)
+        # Throttle: send at most every 80ms to avoid overwhelming the WebSocket
+        if now - last < 0.08:
+            return
+        self._last_stream_time[node_id] = now
+        await self._broadcast({
+            "type": "node_streaming",
+            "workflow_id": self.workflow_id,
+            "node_id": node_id,
+            "chunk": chunk,
+            "partial": partial,
+        })
+
     async def _run_agent_node(self, node: WorkflowNode, input_text: str) -> str:
-        """Run an agent node."""
+        """Run an agent node with token-by-token streaming."""
         data = node.data
         model = data.get("model", "claude-sonnet-4-5-20250929")
         system_prompt = _get(data, "systemPrompt", "system_prompt", "You are a helpful assistant.")
@@ -314,18 +334,31 @@ class WorkflowEngine:
             max_tokens=int(max_tokens),
         )
         t0 = time.monotonic()
-        resp = await agent.chat([{"role": "user", "content": input_text}], stream=False)
+
+        # Stream token-by-token and broadcast via WebSocket
+        content_parts: list[str] = []
+        gen = await agent.chat([{"role": "user", "content": input_text}], stream=True)
+        async for chunk in gen:
+            content_parts.append(chunk)
+            await self._stream_broadcast(node.id, chunk, "".join(content_parts))
+
+        full_content = "".join(content_parts)
         duration_ms = int((time.monotonic() - t0) * 1000)
+
+        # Send final complete content
+        if self._broadcast:
+            self._last_stream_time[node.id] = 0  # reset throttle
+            await self._stream_broadcast(node.id, "", full_content)
 
         await self._log_usage(
             model=model,
-            provider=resp.provider.value,
-            input_tokens=resp.usage.get("input_tokens", 0),
-            output_tokens=resp.usage.get("output_tokens", 0),
+            provider=agent.provider.value,
+            input_tokens=0,
+            output_tokens=0,
             duration_ms=duration_ms,
         )
 
-        return resp.content
+        return full_content
 
     async def _run_tool_node(self, node: WorkflowNode, input_text: str) -> str:
         """Run a tool node."""
@@ -449,22 +482,31 @@ class WorkflowEngine:
         )
 
         current = input_text
-        for _ in range(int(max_iter)):
-            gen_resp = await generator.chat([{"role": "user", "content": current}], stream=False)
+        gen_content = ""
+        for iteration in range(int(max_iter)):
+            # Stream generator response
+            gen_parts: list[str] = []
+            gen_stream = await generator.chat([{"role": "user", "content": current}], stream=True)
+            async for token in gen_stream:
+                gen_parts.append(token)
+                await self._stream_broadcast(node.id, token, "".join(gen_parts))
+            gen_content = "".join(gen_parts)
+
+            # Critic (no need to stream critic to user)
             critic_resp = await critic.chat(
-                [{"role": "user", "content": f"Review this:\n\n{gen_resp.content}"}],
+                [{"role": "user", "content": f"Review this:\n\n{gen_content}"}],
                 stream=False,
             )
             if exit_type == "keyword" and stop_condition.upper() in critic_resp.content.upper()[:100]:
-                return gen_resp.content
+                return gen_content
             current = (
                 f"Original: {input_text}\n\n"
-                f"Previous output:\n{gen_resp.content}\n\n"
+                f"Previous output:\n{gen_content}\n\n"
                 f"Feedback:\n{critic_resp.content}\n\n"
                 f"{refinement_prompt}"
             )
 
-        return gen_resp.content
+        return gen_content
 
     async def _run_meta_agent_node(self, node: WorkflowNode, input_text: str) -> str:
         """Run a sub-workflow inside this node (recursive Gennaro).
@@ -537,12 +579,19 @@ class WorkflowEngine:
         results = []
         for i, chunk in enumerate(chunks):
             prompt = f"[Chunk {i + 1}/{len(chunks)}]\n\n{chunk}"
-            resp = await agent.chat(
-                [{"role": "user", "content": prompt}], stream=False,
-            )
-            results.append(resp.content)
 
-            # Emit progress via broadcast
+            # Stream each chunk's response
+            content_parts: list[str] = []
+            gen = await agent.chat(
+                [{"role": "user", "content": prompt}], stream=True,
+            )
+            async for token in gen:
+                content_parts.append(token)
+                partial_all = separator.join(results + ["".join(content_parts)])
+                await self._stream_broadcast(node.id, token, partial_all)
+            results.append("".join(content_parts))
+
+            # Emit chunk progress via broadcast
             if self._broadcast:
                 await self._broadcast({
                     "type": "workflow_status",

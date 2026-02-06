@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import csv as csv_mod
 import io
+import re
 import uuid
 import zipfile
 
@@ -154,13 +156,37 @@ async def run_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
     return {"status": "started", "workflow_id": workflow_id}
 
 
+def _parse_markdown_tables(text: str) -> list[list[str]]:
+    """Extract markdown tables from text as list of rows (each row = list of cells)."""
+    rows: list[list[str]] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.startswith("|") or not line.endswith("|"):
+            continue
+        # Skip separator lines (e.g. |---|---|)
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(re.match(r"^[-:]+$", c) for c in cells):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def _md_to_plain(text: str) -> str:
+    """Strip common markdown formatting for plain-text export."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)  # bold
+    text = re.sub(r"\*(.+?)\*", r"\1", text)       # italic
+    text = re.sub(r"`(.+?)`", r"\1", text)         # inline code
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)  # headings
+    return text
+
+
 @router.post("/workflows/{workflow_id}/export")
 async def export_workflow(
     workflow_id: str,
-    format: str = Query("zip", regex="^(zip|markdown)$"),
+    format: str = Query("zip", pattern="^(zip|markdown|pdf|docx|csv|xlsx)$"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Export the latest workflow execution results as ZIP or Markdown."""
+    """Export the latest workflow execution results in various formats."""
     # Get workflow info
     result = await db.execute(select(WorkflowRow).where(WorkflowRow.id == workflow_id))
     wf = result.scalar_one_or_none()
@@ -181,6 +207,7 @@ async def export_workflow(
     defn = wf.definition or {"nodes": [], "edges": []}
     node_labels = {n["id"]: n.get("data", {}).get("label", n["id"]) for n in defn.get("nodes", [])}
 
+    # ── Markdown ──────────────────────────────────────────
     if format == "markdown":
         lines = [f"# {wf.name} — Risultati\n"]
         for nid, content in results.items():
@@ -193,7 +220,174 @@ async def export_workflow(
             headers={"Content-Disposition": f'attachment; filename="{wf.name}.md"'},
         )
 
-    # ZIP format
+    # ── PDF ────────────────────────────────────────────────
+    if format == "pdf":
+        from fpdf import FPDF
+
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        # Use built-in Helvetica (supports latin chars)
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(0, 10, wf.name, new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
+
+        for nid, content in results.items():
+            label = node_labels.get(nid, nid)
+            # Section heading
+            pdf.set_font("Helvetica", "B", 13)
+            pdf.cell(0, 8, label, new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
+            # Content
+            pdf.set_font("Helvetica", "", 10)
+            plain = _md_to_plain(str(content))
+            for line in plain.splitlines():
+                if not line.strip():
+                    pdf.ln(3)
+                else:
+                    pdf.multi_cell(0, 5, line.encode("latin-1", "replace").decode("latin-1"))
+            pdf.ln(6)
+
+        buf = io.BytesIO(pdf.output())
+        return StreamingResponse(
+            buf,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}.pdf"'},
+        )
+
+    # ── DOCX ───────────────────────────────────────────────
+    if format == "docx":
+        from docx import Document
+        from docx.shared import Pt
+
+        doc = Document()
+        doc.add_heading(wf.name, level=0)
+
+        for nid, content in results.items():
+            label = node_labels.get(nid, nid)
+            doc.add_heading(label, level=1)
+            text = str(content)
+
+            # Check for markdown tables
+            tables = _parse_markdown_tables(text)
+            if tables:
+                # Add table
+                tbl = doc.add_table(rows=len(tables), cols=len(tables[0]) if tables else 1)
+                tbl.style = "Table Grid"
+                for i, row in enumerate(tables):
+                    for j, cell in enumerate(row):
+                        if j < len(tbl.columns):
+                            tbl.rows[i].cells[j].text = cell
+                # Add remaining non-table text
+                non_table = re.sub(r"\|[^\n]+\|", "", text).strip()
+                if non_table:
+                    for para_text in non_table.split("\n\n"):
+                        if para_text.strip():
+                            p = doc.add_paragraph()
+                            # Handle bold markdown
+                            parts = re.split(r"(\*\*.*?\*\*)", para_text)
+                            for part in parts:
+                                if part.startswith("**") and part.endswith("**"):
+                                    run = p.add_run(part[2:-2])
+                                    run.bold = True
+                                else:
+                                    p.add_run(part)
+            else:
+                # Plain paragraphs with bold support
+                for para_text in text.split("\n\n"):
+                    if not para_text.strip():
+                        continue
+                    p = doc.add_paragraph()
+                    parts = re.split(r"(\*\*.*?\*\*)", para_text)
+                    for part in parts:
+                        if part.startswith("**") and part.endswith("**"):
+                            run = p.add_run(part[2:-2])
+                            run.bold = True
+                        else:
+                            p.add_run(part)
+
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}.docx"'},
+        )
+
+    # ── CSV ────────────────────────────────────────────────
+    if format == "csv":
+        out = io.StringIO()
+        writer = csv_mod.writer(out)
+
+        # Try to find tables in results; fallback to Node/Content columns
+        has_tables = False
+        for nid, content in results.items():
+            tables = _parse_markdown_tables(str(content))
+            if tables:
+                has_tables = True
+                label = node_labels.get(nid, nid)
+                writer.writerow([f"--- {label} ---"])
+                for row in tables:
+                    writer.writerow(row)
+                writer.writerow([])
+
+        if not has_tables:
+            writer.writerow(["Node", "Content"])
+            for nid, content in results.items():
+                label = node_labels.get(nid, nid)
+                writer.writerow([label, _md_to_plain(str(content))])
+
+        buf = io.BytesIO(out.getvalue().encode("utf-8-sig"))  # BOM for Excel compat
+        return StreamingResponse(
+            buf,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}.csv"'},
+        )
+
+    # ── XLSX ───────────────────────────────────────────────
+    if format == "xlsx":
+        from openpyxl import Workbook
+        from openpyxl.styles import Font
+
+        wb = Workbook()
+        wb.remove(wb.active)  # Remove default sheet
+
+        for nid, content in results.items():
+            label = node_labels.get(nid, nid)
+            # Sheet name max 31 chars
+            sheet_name = label[:31] if label else nid[:31]
+            ws = wb.create_sheet(title=sheet_name)
+
+            tables = _parse_markdown_tables(str(content))
+            if tables:
+                for i, row in enumerate(tables):
+                    for j, cell in enumerate(row):
+                        c = ws.cell(row=i + 1, column=j + 1, value=cell)
+                        if i == 0:
+                            c.font = Font(bold=True)
+            else:
+                # Write text content line-by-line
+                ws.cell(row=1, column=1, value=label).font = Font(bold=True)
+                plain = _md_to_plain(str(content))
+                for i, line in enumerate(plain.splitlines(), 2):
+                    ws.cell(row=i, column=1, value=line)
+                # Auto-width for column A
+                ws.column_dimensions["A"].width = 80
+
+        if not wb.sheetnames:
+            wb.create_sheet(title="Results")
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}.xlsx"'},
+        )
+
+    # ── ZIP (default) ─────────────────────────────────────
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for i, (nid, content) in enumerate(results.items(), 1):
