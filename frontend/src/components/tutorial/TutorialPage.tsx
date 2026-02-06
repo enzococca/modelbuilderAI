@@ -488,28 +488,30 @@ Indica quale performa meglio e perche, suggerendo il modello da usare in produzi
             </Card>
 
             {/* Tutorial 17 */}
-            <Card title="Tutorial 17 — GIS Analysis" subtitle="Pattern Parallel — analisi geospaziale con mappa" icon={BookOpen} accent="blue">
-              <Diagram>{`              ┌──────────────────┐
-           ┌─>│ GIS: Info        │──┐
-           │  └──────────────────┘  │
-┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────┐  ┌────────┐
-│ INPUT  │─┼─>│ GIS: Analisi Vec.│──┼─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
-│ .gpkg  │ │  └──────────────────┘  │  └────────────┘  │ Report   │  │ +Mappa │
-└────────┘ │  ┌──────────────────┐  │                  └──────────┘  └────────┘
-           └─>│ GIS: Mappa       │──┘
-              └──────────────────┘`}</Diagram>
+            <Card title="Tutorial 17 — GIS Analysis" subtitle="Pattern Parallel — analisi geospaziale con mappa interattiva" icon={BookOpen} accent="blue">
+              <Diagram>{`              ┌────────────────┐
+           ┌─>│  GIS: Info     │──┐
+           │  └────────────────┘  │  ┌────────────┐  ┌──────────┐
+┌────────┐ │  ┌────────────────┐  ├─>│ Aggregator │─>│  Sonnet  │──┐
+│ INPUT  │─┤  │ GIS: Analisi V.│──┘  │  (dati)    │  │  Report  │  │  ┌──────────┐  ┌────────┐
+│ .gpkg  │ │  └────────────────┘     └────────────┘  └──────────┘  ├─>│Aggregator│─>│ OUTPUT │
+└────────┘ │                                                       │  │(report+  │  │  GIS   │
+           │  ┌────────────────┐                                   │  │ mappa)   │  └────────┘
+           └─>│  GIS: Mappa    │───────────────────────────────────┘  └──────────┘
+              └────────────────┘`}</Diagram>
               <Steps items={[
-                'Input: path a file GIS (shapefile, geopackage, GeoTIFF)',
-                '3 tool GIS in parallelo: info metadata, analisi vettoriale, render mappa',
-                'Aggregator combina tutti i risultati',
-                'Sonnet genera un report GIS professionale',
+                'Input: carica file GIS (shapefile, geopackage, GeoTIFF)',
+                'Info + Analisi Vettoriale → Aggregator → Sonnet scrive il report',
+                'Genera Mappa → produce GeoJSON con mappa interattiva Leaflet',
+                'Aggregator finale unisce report testuale + mappa interattiva',
+                'Output contiene sia il report che la mappa navigabile',
               ]} />
               <Prompt label="Report GIS (Sonnet):">{`Sei un esperto GIS. Crea un report che descriva:
 1. Il dataset (CRS, features, estensione)
 2. Statistiche geometriche (aree, lunghezze, centroidi)
 3. Pattern spaziali identificati
 4. Suggerimenti per ulteriori analisi`}</Prompt>
-              <Tip>Supporta: shapefile (.shp), geopackage (.gpkg), GeoTIFF (.tif). Operazioni: info, vector/raster/DEM analysis, buffer, overlay, reproject, map rendering.</Tip>
+              <Tip>La mappa bypassa l'agente AI e arriva direttamente all'output come mappa interattiva Leaflet. Supporta: .shp, .gpkg, .tif. Operazioni: info, vector/raster/DEM analysis, buffer, overlay, reproject.</Tip>
             </Card>
           </div>
         </div>
