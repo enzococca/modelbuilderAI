@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
-#  🔄 RALPH-LOOP — Startup Script
-#  AI Agent Orchestrator & Model Builder
+#  Gennaro — Full Setup & Startup Script
+#  AI Agent Orchestrator & Visual Workflow Builder
 # ============================================================
 
 set -e
@@ -27,7 +27,7 @@ ENV_FILE="$PROJECT_DIR/.env"
 # ============================================================
 echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════════════════╗"
-echo "║          🔄 RALPH-LOOP                           ║"
+echo "║          🔄 Gennaro                           ║"
 echo "║     AI Agent Orchestrator & Model Builder         ║"
 echo "╚═══════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -91,7 +91,7 @@ if [ ! -f "$ENV_FILE" ]; then
     echo -e "\n${BOLD}🔑 Creazione file .env...${NC}\n"
     cat > "$ENV_FILE" << 'ENVEOF'
 # ============================================================
-# RALPH-LOOP — Configurazione
+# Gennaro — Configurazione
 # ============================================================
 
 # === API Keys (OBBLIGATORIO: almeno uno) ===
@@ -102,7 +102,7 @@ OPENAI_API_KEY=
 GOOGLE_API_KEY=
 
 # === Database ===
-DATABASE_URL=sqlite+aiosqlite:///./data/db/ralph.db
+DATABASE_URL=sqlite+aiosqlite:///./data/db/gennaro.db
 
 # === Storage ===
 CHROMA_PATH=./data/vectors
@@ -242,7 +242,7 @@ echo -e "\n${BOLD}🔧 Generazione file backend di base...${NC}\n"
 if [ ! -f "$BACKEND_DIR/main.py" ]; then
     cat > "$BACKEND_DIR/main.py" << 'PYEOF'
 """
-Ralph-Loop — AI Agent Orchestrator
+Gennaro — AI Agent Orchestrator
 FastAPI Backend Entry Point
 """
 import os
@@ -255,12 +255,12 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🔄 Ralph-Loop starting...")
+    print("🔄 Gennaro starting...")
     yield
-    print("🔄 Ralph-Loop shutting down...")
+    print("🔄 Gennaro shutting down...")
 
 app = FastAPI(
-    title="Ralph-Loop",
+    title="Gennaro",
     description="AI Agent Orchestrator & Model Builder",
     version="0.1.0",
     lifespan=lifespan,
@@ -278,7 +278,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"name": "Ralph-Loop", "status": "running", "version": "0.1.0"}
+    return {"name": "Gennaro", "status": "running", "version": "0.1.0"}
 
 @app.get("/api/health")
 async def health():
@@ -325,14 +325,14 @@ fi
 # config.py
 if [ ! -f "$BACKEND_DIR/config.py" ]; then
     cat > "$BACKEND_DIR/config.py" << 'PYEOF'
-"""Ralph-Loop Configuration"""
+"""Gennaro Configuration"""
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     google_api_key: str = ""
-    database_url: str = "sqlite+aiosqlite:///./data/db/ralph.db"
+    database_url: str = "sqlite+aiosqlite:///./data/db/gennaro.db"
     chroma_path: str = "./data/vectors"
     upload_path: str = "./data/uploads"
     host: str = "0.0.0.0"
@@ -429,13 +429,13 @@ fi
 # ============================================================
 #  8. Avvio servizi
 # ============================================================
-echo -e "\n${BOLD}🚀 Avvio Ralph-Loop...${NC}\n"
+echo -e "\n${BOLD}🚀 Avvio Gennaro...${NC}\n"
 
 cleanup() {
     echo -e "\n${YELLOW}Arresto servizi...${NC}"
     kill $BACKEND_PID 2>/dev/null
     kill $FRONTEND_PID 2>/dev/null
-    echo -e "${GREEN}Ralph-Loop arrestato.${NC}"
+    echo -e "${GREEN}Gennaro arrestato.${NC}"
     exit 0
 }
 trap cleanup SIGINT SIGTERM
@@ -469,7 +469,7 @@ sleep 3
 # ============================================================
 echo ""
 echo -e "${GREEN}${BOLD}╔═══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}${BOLD}║          🔄 RALPH-LOOP AVVIATO!                  ║${NC}"
+echo -e "${GREEN}${BOLD}║          🔄 Gennaro AVVIATO!                  ║${NC}"
 echo -e "${GREEN}${BOLD}╠═══════════════════════════════════════════════════╣${NC}"
 echo -e "${GREEN}${BOLD}║                                                   ║${NC}"
 echo -e "${GREEN}${BOLD}║  Frontend:  ${CYAN}http://localhost:${FRONTEND_PORT:-5173}${GREEN}              ║${NC}"

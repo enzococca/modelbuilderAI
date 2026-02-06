@@ -94,15 +94,20 @@ npm install
 
 ### 5. Run
 
-**Option A: Using the start script**
+**Option A: Quick launch** (requires setup already done)
 
 ```bash
-./start.sh
+./run.sh          # macOS / Linux
+run.bat           # Windows
 ```
 
-This starts both backend and frontend together.
+**Option B: Full setup + launch** (first time)
 
-**Option B: Manual (two terminals)**
+```bash
+./start.sh        # Creates venv, installs deps, starts services
+```
+
+**Option C: Manual (two terminals)**
 
 Terminal 1 — Backend:
 ```bash
