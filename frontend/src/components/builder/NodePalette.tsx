@@ -27,6 +27,10 @@ const tutorials = [
   { id: '10', file: '10-validazione-output.json', label: '10. Validazione', desc: 'Genera → Valida → Correggi' },
   { id: '11', file: '11-fallback-modello.json', label: '11. Fallback', desc: 'Claude → Backup GPT-4o' },
   { id: '12', file: '12-quality-gate.json', label: '12. Quality Gate', desc: 'Score ≥ 7 o rigenera' },
+  { id: '13', file: '13-ml-pipeline.json', label: '13. ML Pipeline', desc: 'Train RF + GB su CSV' },
+  { id: '14', file: '14-website-generator.json', label: '14. Website Gen', desc: 'HTML+CSS+JS → ZIP' },
+  { id: '15', file: '15-chunker-documento.json', label: '15. Chunker Doc', desc: 'Splitta → Analizza → Sintesi' },
+  { id: '16', file: '16-meta-agent.json', label: '16. Meta-Agent', desc: 'Sub-workflow ricorsivo' },
 ];
 
 interface Props {

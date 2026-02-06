@@ -58,7 +58,7 @@ export function WorkflowCanvas() {
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
 
-  const { currentWorkflow, setCurrentWorkflow } = useWorkflowStore();
+  const { currentWorkflow, setCurrentWorkflow, loadVersion } = useWorkflowStore();
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Listen for WebSocket workflow_status events
@@ -158,6 +158,27 @@ export function WorkflowCanvas() {
     setExecutionError(null);
     setShowResults(false);
   }, [currentWorkflow, setNodes, setEdges]);
+
+  // Sync from store when loadFromDefinition is called externally (e.g. from chat)
+  useEffect(() => {
+    if (loadVersion === 0) return;
+    const state = useWorkflowStore.getState();
+    if (state.nodes.length === 0 && state.edges.length === 0) return;
+    setNodes(state.nodes);
+    setEdges(state.edges);
+    // Update nodeId counter to avoid collisions
+    const maxId = state.nodes.reduce((max, n) => {
+      const num = parseInt(n.id.replace(/\D/g, ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
+    nodeId = maxId;
+    // Reset execution state
+    setNodeStatuses({});
+    setExecutionStatus(null);
+    setExecutionResults(null);
+    setExecutionError(null);
+    setShowResults(false);
+  }, [loadVersion, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),

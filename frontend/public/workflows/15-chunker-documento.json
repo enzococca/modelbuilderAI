@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Documento Lungo",
+        "inputType": "text",
+        "defaultValue": "CAPITOLO 1: INTRODUZIONE ALL'INTELLIGENZA ARTIFICIALE\n\nL'intelligenza artificiale (IA) è una branca dell'informatica che si occupa della creazione di sistemi in grado di svolgere compiti che normalmente richiedono intelligenza umana. Questi compiti includono il riconoscimento vocale, la percezione visiva, il processo decisionale e la traduzione linguistica.\n\nLa storia dell'IA inizia negli anni '50, quando Alan Turing propose il famoso 'Test di Turing' come misura dell'intelligenza delle macchine. Da allora, il campo ha attraversato diverse fasi di entusiasmo e delusione, note come 'inverni dell'IA'.\n\nCAPITOLO 2: MACHINE LEARNING\n\nIl Machine Learning (ML) è un sottoinsieme dell'IA che si concentra sulla costruzione di sistemi che apprendono dai dati. Invece di essere esplicitamente programmati, questi sistemi migliorano automaticamente attraverso l'esperienza.\n\nEsistono tre principali paradigmi di apprendimento:\n1. Apprendimento supervisionato: il modello apprende da esempi etichettati\n2. Apprendimento non supervisionato: il modello trova pattern nei dati non etichettati\n3. Apprendimento per rinforzo: il modello apprende attraverso ricompense e penalità\n\nCAPITOLO 3: DEEP LEARNING\n\nIl Deep Learning è una sottocategoria del ML basata su reti neurali artificiali con molti strati (deep). Le reti neurali profonde hanno rivoluzionato campi come la computer vision, il natural language processing e il riconoscimento vocale.\n\nLe architetture principali includono:\n- CNN (Convolutional Neural Networks): per immagini\n- RNN (Recurrent Neural Networks): per sequenze\n- Transformer: per linguaggio naturale (GPT, BERT)\n- GAN (Generative Adversarial Networks): per generazione\n\nCAPITOLO 4: APPLICAZIONI PRATICHE\n\nL'IA trova applicazione in numerosi settori:\n- Sanità: diagnosi mediche, scoperta di farmaci\n- Finanza: trading algoritmico, rilevamento frodi\n- Trasporti: veicoli autonomi, ottimizzazione logistica\n- Educazione: tutoring personalizzato, valutazione automatica\n- Agricoltura: monitoraggio colture, previsione raccolti"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "chunker",
+      "position": { "x": 350, "y": 250 },
+      "data": {
+        "label": "Chunker per Capitoli",
+        "chunkSize": 800,
+        "overlap": 100,
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Analizza questo capitolo del documento e produci:\n1. Un riassunto di 2-3 frasi\n2. I concetti chiave (lista puntata)\n3. Le parole chiave principali\n\nFormatta in Markdown."
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 430 },
+      "data": {
+        "label": "Sintetizzatore Finale",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Ricevi i riassunti di diversi capitoli di un documento, ciascuno con concetti chiave e parole chiave.\n\nCrea un executive summary completo che:\n1. Introduca l'argomento generale\n2. Riassuma i punti principali di ogni capitolo\n3. Identifichi i temi trasversali\n4. Crei una mappa concettuale testuale dei collegamenti tra i capitoli\n5. Concluda con le implicazioni principali\n\nFormatta in Markdown con titoli e sottotitoli.",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 350, "y": 600 },
+      "data": { "label": "Executive Summary", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

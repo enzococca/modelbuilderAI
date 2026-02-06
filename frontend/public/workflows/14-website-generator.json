@@ -1,0 +1,85 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Richiesta Sito",
+        "inputType": "text",
+        "defaultValue": "Crea una landing page per un'app di meditazione chiamata 'ZenFlow'. Design moderno, colori rilassanti (blu/verde), con sezioni: hero, features (3 card), testimonials, CTA. Responsive e con animazioni CSS."
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "Designer HTML",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un web designer esperto. Genera il codice HTML per il sito richiesto.\n\nRegole:\n- HTML5 semantico\n- Usa classi CSS descrittive\n- Includi tutti i contenuti (testi, placeholder immagini)\n- Collega style.css e script.js\n- Responsive con meta viewport\n\nRispondi SOLO con il codice HTML in un blocco:\n```html\n...\n```",
+        "temperature": 0.8,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Designer CSS",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un CSS designer esperto. Genera lo stylesheet completo per il sito richiesto.\n\nRegole:\n- CSS moderno (flexbox, grid, custom properties)\n- Responsive (mobile-first con media queries)\n- Animazioni smooth (transitions, keyframes)\n- Palette colori coerente\n- Typography bella e leggibile\n\nRispondi SOLO con il codice CSS in un blocco:\n```css\n...\n```",
+        "temperature": 0.8,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 600, "y": 200 },
+      "data": {
+        "label": "Developer JS",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un JavaScript developer. Genera il codice JS per interattivita del sito.\n\nRegole:\n- Vanilla JS (no framework)\n- Smooth scroll per navigazione\n- Animazioni on-scroll (Intersection Observer)\n- Mobile menu toggle\n- Form validation se necessario\n\nRispondi SOLO con il codice JavaScript in un blocco:\n```js\n...\n```",
+        "temperature": 0.7,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 380 },
+      "data": {
+        "label": "Assembla Codice",
+        "strategy": "concatenate",
+        "separator": "\n\n"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "tool",
+      "position": { "x": 350, "y": 530 },
+      "data": {
+        "label": "Genera Sito ZIP",
+        "tool": "website_generator"
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 680 },
+      "data": { "label": "Sito Web", "outputFormat": "text" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e1-4", "source": "node_1", "target": "node_4" },
+    { "id": "e2-5", "source": "node_2", "target": "node_5" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Dataset CSV",
+        "inputType": "text",
+        "defaultValue": "sepal_length,sepal_width,petal_length,petal_width,species\n5.1,3.5,1.4,0.2,setosa\n4.9,3.0,1.4,0.2,setosa\n4.7,3.2,1.3,0.2,setosa\n5.0,3.6,1.4,0.2,setosa\n5.4,3.9,1.7,0.4,setosa\n4.6,3.4,1.4,0.3,setosa\n5.0,3.4,1.5,0.2,setosa\n7.0,3.2,4.7,1.4,versicolor\n6.4,3.2,4.5,1.5,versicolor\n6.9,3.1,4.9,1.5,versicolor\n5.5,2.3,4.0,1.3,versicolor\n6.5,2.8,4.6,1.5,versicolor\n5.7,2.8,4.5,1.3,versicolor\n6.3,3.3,6.0,2.5,virginica\n5.8,2.7,5.1,1.9,virginica\n7.1,3.0,5.9,2.1,virginica\n6.3,2.9,5.6,1.8,virginica\n6.5,3.0,5.8,2.2,virginica\n7.6,3.0,6.6,2.1,virginica\n4.9,2.5,4.5,1.7,virginica"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Analisi Dati",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Analizza il dataset CSV fornito. Rispondi con:\n1. Numero di righe e colonne\n2. Tipi di variabili (numeriche vs categoriche)\n3. Statistiche descrittive\n4. La colonna target suggerita per la classificazione\n5. Eventuali problemi (valori mancanti, outlier)\n\nSii conciso e strutturato.",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 100, "y": 380 },
+      "data": {
+        "label": "Train Random Forest",
+        "tool": "ml_pipeline",
+        "operation": "train",
+        "modelType": "random_forest",
+        "targetColumn": "species",
+        "modelName": "iris_rf"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 600, "y": 380 },
+      "data": {
+        "label": "Train Gradient Boosting",
+        "tool": "ml_pipeline",
+        "operation": "train",
+        "modelType": "gradient_boosting",
+        "targetColumn": "species",
+        "modelName": "iris_gb"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 540 },
+      "data": {
+        "label": "Confronto Modelli",
+        "strategy": "concatenate",
+        "separator": "\n\n---\n\n"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 350, "y": 690 },
+      "data": {
+        "label": "Report Finale",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Ricevi i risultati del training di due modelli ML (Random Forest e Gradient Boosting) sullo stesso dataset.\n\nCrea un report comparativo che includa:\n1. Confronto delle metriche (accuracy, train/test score)\n2. Quale modello ha performato meglio e perche\n3. Feature importance (se disponibile)\n4. Raccomandazione finale su quale modello usare in produzione\n\nFormatta il report in Markdown con tabelle dove appropriato.",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 860 },
+      "data": { "label": "Report ML", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e1-4", "source": "node_1", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e2-6", "source": "node_2", "target": "node_6" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

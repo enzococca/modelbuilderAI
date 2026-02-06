@@ -35,9 +35,11 @@ Danno capacità extra agli agenti.
 |------|----------|
 | **Web Search** | Cerca informazioni aggiornate su internet |
 | **File Reader** | Legge PDF, DOCX, CSV, immagini |
-| **Code Executor** | Esegue codice Python in sandbox |
+| **Code Executor** | Esegue codice Python in sandbox (numpy, pandas, matplotlib, sklearn) |
 | **Database Query** | Interroga database SQL |
 | **Image Analyzer** | Analizza immagini con vision AI |
+| **ML Pipeline** | Allena, predice e valuta modelli ML da dati CSV (Random Forest, SVM, KNN...) |
+| **Website Generator** | Genera siti web completi (HTML/CSS/JS) impacchettati come ZIP |
 
 ---
 
@@ -48,9 +50,11 @@ Controllano il flusso della pipeline.
 |------|----------|
 | **Input** | Punto di ingresso: testo, file, o variabili |
 | **Output** | Punto di uscita: risultato finale |
-| **Condition** | Branch if/else basato su contenuto |
-| **Loop** | Ripete fino a una condizione |
+| **Condition** | Branch if/else basato su contenuto (contains, score threshold, regex, ecc.) |
+| **Loop** | Ripete fino a una condizione (keyword, score) |
 | **Aggregator** | Combina risultati da branch paralleli |
+| **Meta-Agent** | Esegue un sub-workflow ricorsivamente (profondità max configurabile) |
+| **Chunker** | Splitta testi lunghi in chunk, processa ognuno con un agente, poi aggrega |
 
 ---
 
@@ -535,6 +539,191 @@ Scrivi una newsletter email coinvolgente.
 
 ---
 
+## 📖 Tutorial 10 — Validazione Output
+
+### Genera, valida il formato, correggi se necessario (Pattern: Condition Branch)
+
+```
+┌─────────┐   ┌──────────────┐   ┌──────────────┐   ┌───────────────┐
+│  INPUT   │──▶│ Generatore   │──▶│ Validatore   │──▶│ Formato OK?   │
+│"Richiesta"│  │ (Sonnet)     │   │ (Sonnet)     │   │ (Condition)   │
+└─────────┘   └──────────────┘   └──────────────┘   └───────┬───────┘
+                                                       true │   │ false
+                                                    ┌───────▼┐ ┌▼──────────┐
+                                                    │ OUTPUT │ │ Correttore │
+                                                    │ Valido │ │ (Sonnet)   │
+                                                    └────────┘ └─────┬──────┘
+                                                                     │
+                                                               ┌─────▼──────┐
+                                                               │   OUTPUT   │
+                                                               │  Corretto  │
+                                                               └────────────┘
+```
+
+**Come funziona il Condition Node:**
+- Il Validatore risponde "VALIDO" se il formato è corretto, oppure "NON VALIDO" con feedback
+- Il nodo Condition controlla se l'output contiene "VALIDO"
+- Edge label `true` → Output diretto
+- Edge label `false` → Correttore → Output corretto
+
+---
+
+## 📖 Tutorial 11 — Fallback Modello
+
+### Se il modello primario non soddisfa, passa al backup (Pattern: Fallback)
+
+```
+┌─────────┐   ┌──────────────┐   ┌──────────────┐   ┌───────────────┐
+│  INPUT   │──▶│ Claude       │──▶│ Valutatore   │──▶│ Qualità OK?   │
+│  "Task"  │   │ (Primario)   │   │ Qualità      │   │ (Condition)   │
+└─────────┘   └──────────────┘   └──────────────┘   └───────┬───────┘
+                                                       true │   │ false
+                                                    ┌───────▼┐ ┌▼──────────┐
+                                                    │ OUTPUT │ │ GPT-4o    │
+                                                    │Primario│ │ (Backup)  │
+                                                    └────────┘ └─────┬──────┘
+                                                                     │
+                                                               ┌─────▼──────┐
+                                                               │   OUTPUT   │
+                                                               │  Fallback  │
+                                                               └────────────┘
+```
+
+**Perché usare il Fallback?** Diversi modelli eccellono in task diversi. Se Claude non raggiunge la qualità desiderata su un task poetico, GPT-4o potrebbe farlo meglio (o viceversa).
+
+---
+
+## 📖 Tutorial 12 — Quality Gate
+
+### Score >= 7 approva, altrimenti rigenera con feedback (Pattern: Quality Gate)
+
+Il nodo Condition usa `score_threshold` con operatore `gte` (maggiore o uguale) per estrarre il punteggio numerico dal testo dello scorer.
+
+**Configurazione Condition Node:**
+- **Condition Type**: Score threshold
+- **Value**: 7
+- **Operator**: >= (gte)
+
+---
+
+## 📖 Tutorial 13 — ML Pipeline
+
+### Allena due modelli ML e confrontali (Pattern: Parallel + Aggregation)
+
+```
+                                  ┌─────────────────────────┐
+                               ┌─▶│ Train Random Forest     │──┐
+┌─────────┐   ┌────────────┐ │  └─────────────────────────┘  │  ┌────────────┐
+│  INPUT   │──▶│  Analisi   │─┤                                ├─▶│ Confronto  │──▶ OUTPUT
+│  CSV     │   │  Dati      │ │  ┌─────────────────────────┐  │  │ Modelli    │
+└─────────┘   └────────────┘ └─▶│ Train Gradient Boosting  │──┘  └────────────┘
+                                  └─────────────────────────┘
+```
+
+**Come funziona:**
+1. L'Input contiene un dataset CSV (es. Iris)
+2. Due nodi **Tool ML Pipeline** in parallelo allenano Random Forest e Gradient Boosting
+3. L'**Aggregator** combina i risultati del training
+4. Un agente **Sonnet** crea un report comparativo
+
+**Configurazione nodo ML Pipeline:**
+- **Tool**: ML Pipeline
+- **Operation**: Train
+- **Model Type**: Random Forest / Gradient Boosting
+- **Target Column**: la colonna da predire (es. "species")
+- **Model Name**: nome per salvare il modello
+
+I modelli allenati vengono salvati in `data/models/` e possono essere riutilizzati con l'operazione "Predict".
+
+---
+
+## 📖 Tutorial 14 — Website Generator
+
+### 3 agenti generano HTML, CSS e JS → Tool assembla il sito (Pattern: Parallel → Tool)
+
+```
+                    ┌──────────────────┐
+                 ┌─▶│ Designer HTML    │──┐
+                 │  └──────────────────┘  │
+┌─────────┐     │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────────┐  ┌────────┐
+│  INPUT   │────┼─▶│ Designer CSS     │──┼─▶│ AGGREGATOR │─▶│ Website Gen  │─▶│ OUTPUT │
+│"Richiesta"│   │  └──────────────────┘  │  └────────────┘  │ (Tool ZIP)   │  │  📦   │
+└─────────┘     │  ┌──────────────────┐  │                   └──────────────┘  └────────┘
+                 └─▶│ Developer JS     │──┘
+                    └──────────────────┘
+```
+
+**Come funziona:**
+1. Descrivi il sito che vuoi (landing page, portfolio, ecc.)
+2. Tre agenti specializzati generano in parallelo: HTML, CSS, JavaScript
+3. L'Aggregator combina i tre codici
+4. Il **Website Generator Tool** rileva i blocchi ```html, ```css e ```js, crea i file e li impacchetta come ZIP
+5. Il ZIP viene salvato in `data/websites/` e può essere scaricato
+
+**Tip:** Sii specifico nella richiesta! Include: stile (moderno, minimal, colorato), sezioni (hero, features, CTA), palette colori, e se deve essere responsive.
+
+---
+
+## 📖 Tutorial 15 — Chunker per Documenti Lunghi
+
+### Splitta un documento lungo in chunk, analizza ognuno, sintetizza (Pattern: Chunker → Agent)
+
+```
+┌─────────────┐   ┌──────────────────────────┐   ┌──────────────┐   ┌────────┐
+│   INPUT      │──▶│ CHUNKER                  │──▶│ Sintetizzatore│──▶│ OUTPUT │
+│ Doc lungo    │   │ 800 char/chunk, 100 overlap│  │ (Sonnet)     │   │Summary │
+└─────────────┘   │ Haiku processa ogni chunk │   └──────────────┘   └────────┘
+                   └──────────────────────────┘
+```
+
+**Come funziona il Chunker:**
+1. Il testo viene diviso in chunk di dimensione configurabile (es. 800 caratteri) con sovrapposizione (es. 100 char) per non perdere contesto ai bordi
+2. Ogni chunk viene processato dall'agente interno del Chunker (configurabile: modello, system prompt)
+3. I risultati di tutti i chunk vengono concatenati
+4. Un agente successivo sintetizza il tutto in un executive summary
+
+**Configurazione Chunker Node:**
+- **Model**: Haiku (veloce ed economico per molti chunk)
+- **System Prompt**: "Analizza questo chunk e produci un riassunto..."
+- **Chunk Size**: 800 caratteri
+- **Overlap**: 100 caratteri
+
+**Quando usarlo:** Documenti che superano il context window di un singolo agente, articoli lunghi, libri, report aziendali.
+
+---
+
+## 📖 Tutorial 16 — Meta-Agent (Sub-Workflow Ricorsivo)
+
+### Un nodo che esegue un intero workflow al suo interno (Pattern: Meta / Ricorsione)
+
+```
+┌─────────┐   ┌──────────────┐   ┌────────────────────────────┐   ┌──────────────┐   ┌────────┐
+│  INPUT   │──▶│ Orchestratore│──▶│ META-AGENT                 │──▶│ Editor Finale│──▶│ OUTPUT │
+│ "Task"   │   │ (Sonnet)     │   │                            │   │ (Sonnet)     │   │ Report │
+└─────────┘   └──────────────┘   │  ┌ Sub-Workflow ─────────┐ │   └──────────────┘   └────────┘
+                                   │  │ Input → [Agente A]   │ │
+                                   │  │          [Agente B]   │ │
+                                   │  │       → Aggregator    │ │
+                                   │  │       → Output        │ │
+                                   │  └───────────────────────┘ │
+                                   └────────────────────────────┘
+```
+
+**Come funziona il Meta-Agent:**
+1. Contiene una **definizione di workflow completa** (nodi + edge) nelle sue configurazioni
+2. Quando viene eseguito, lancia il sub-workflow come se fosse un workflow indipendente
+3. L'input del Meta-Agent diventa l'input del sub-workflow
+4. L'output dei nodi Output del sub-workflow diventa l'output del Meta-Agent
+5. **Profondità massima configurabile** (default: 3 livelli) per evitare ricorsione infinita
+
+**Quando usarlo:** Task complessi che possono essere scomposti in sotto-processi indipendenti. Perfetto per orchestrare team di agenti specializzati.
+
+**Configurazione:**
+- Incolla il JSON del sub-workflow nel campo "Sub-Workflow (JSON)" del NodeConfig
+- Imposta la profondità massima di ricorsione
+
+---
+
 ## 🎯 Suggerimenti Pro
 
 ### Scegliere il Modello Giusto
@@ -566,6 +755,11 @@ Router + Specialists:      Classifica → Indirizza all'esperto giusto
 Loop + Condition:          Genera → Critica → Se OK esci, altrimenti ripeti
 Debate + Judge:            Pro vs Contro → Giudice decide
 RAG + Agent:               Cerca nei tuoi documenti → Rispondi con citazioni
+Condition + Fallback:      Primario → Valuta → Se fallisce → Backup
+Chunker + Synth:           Documento lungo → Splitta → Analizza → Sintetizza
+Meta-Agent + Team:         Orchestratore → Sub-workflow team → Editor finale
+ML Pipeline + Report:      CSV → Train modelli paralleli → Confronto → Report
+Website Gen + Review:      Genera sito → Valida → Correggi → ZIP
 ```
 
 ### Errori Comuni da Evitare

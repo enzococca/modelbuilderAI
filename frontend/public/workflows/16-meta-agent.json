@@ -1,0 +1,113 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Task Complesso",
+        "inputType": "text",
+        "defaultValue": "Crea un'analisi completa del mercato delle auto elettriche in Europa nel 2025, includendo dati di vendita, principali produttori, trend tecnologici e previsioni future."
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Orchestratore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un project manager AI. Ricevi un task complesso e lo scomponi in sotto-task piu gestibili.\n\nPer ogni sotto-task, specifica:\n1. Cosa deve essere fatto\n2. Quale tipo di competenza serve\n3. Come il risultato contribuisce al deliverable finale\n\nRispondi con i sotto-task numerati, chiari e specifici.",
+        "temperature": 0.4,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "meta_agent",
+      "position": { "x": 350, "y": 370 },
+      "data": {
+        "label": "Sub-Workflow Ricerca",
+        "maxDepth": 2,
+        "workflowDefinition": {
+          "nodes": [
+            {
+              "id": "sub_1",
+              "type": "input",
+              "position": { "x": 250, "y": 30 },
+              "data": { "label": "Query", "inputType": "text", "defaultValue": "" }
+            },
+            {
+              "id": "sub_2",
+              "type": "agent",
+              "position": { "x": 100, "y": 200 },
+              "data": {
+                "label": "Ricercatore A",
+                "model": "claude-haiku-4-5-20251001",
+                "systemPrompt": "Sei un ricercatore specializzato in dati di mercato. Analizza il task e fornisci dati quantitativi, statistiche e cifre rilevanti. Cita fonti quando possibile.",
+                "temperature": 0.5,
+                "maxTokens": 2048
+              }
+            },
+            {
+              "id": "sub_3",
+              "type": "agent",
+              "position": { "x": 400, "y": 200 },
+              "data": {
+                "label": "Ricercatore B",
+                "model": "claude-haiku-4-5-20251001",
+                "systemPrompt": "Sei un analista di trend tecnologici. Analizza il task e fornisci insight su innovazioni, tecnologie emergenti e previsioni future nel settore.",
+                "temperature": 0.6,
+                "maxTokens": 2048
+              }
+            },
+            {
+              "id": "sub_4",
+              "type": "aggregator",
+              "position": { "x": 250, "y": 380 },
+              "data": { "label": "Merge Ricerche", "strategy": "concatenate" }
+            },
+            {
+              "id": "sub_5",
+              "type": "output",
+              "position": { "x": 250, "y": 520 },
+              "data": { "label": "Ricerca Completa", "outputFormat": "markdown" }
+            }
+          ],
+          "edges": [
+            { "id": "se1-2", "source": "sub_1", "target": "sub_2" },
+            { "id": "se1-3", "source": "sub_1", "target": "sub_3" },
+            { "id": "se2-4", "source": "sub_2", "target": "sub_4" },
+            { "id": "se3-4", "source": "sub_3", "target": "sub_4" },
+            { "id": "se4-5", "source": "sub_4", "target": "sub_5" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 350, "y": 560 },
+      "data": {
+        "label": "Editor Finale",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un editor professionale. Ricevi i risultati del task originale, la pianificazione dell'orchestratore e la ricerca del sub-workflow.\n\nComponi un report finale professionale che:\n1. Abbia un executive summary\n2. Integri tutti i dati e insight raccolti\n3. Sia strutturato con sezioni e sottosezioni\n4. Includa una conclusione con raccomandazioni\n5. Sia scritto in tono professionale\n\nFormatta in Markdown completo.",
+        "temperature": 0.6,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 350, "y": 740 },
+      "data": { "label": "Report Finale", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

@@ -7,6 +7,8 @@ interface WorkflowState {
   edges: Edge[];
   workflows: Workflow[];
   currentWorkflow: Workflow | null;
+  /** Incremented each time loadFromDefinition is called so WorkflowCanvas can detect external loads. */
+  loadVersion: number;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
   onNodesChange: (changes: unknown[]) => void;
@@ -16,11 +18,12 @@ interface WorkflowState {
   loadFromDefinition: (def: { nodes: unknown[]; edges: unknown[] }) => void;
 }
 
-export const useWorkflowStore = create<WorkflowState>((set) => ({
+export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   nodes: [],
   edges: [],
   workflows: [],
   currentWorkflow: null,
+  loadVersion: 0,
   setNodes: (nodes) => set({ nodes }),
   setEdges: (edges) => set({ edges }),
   onNodesChange: () => {},
@@ -40,6 +43,6 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
       target: e.target as string,
       label: (e.label as string) || undefined,
     })) as Edge[];
-    set({ nodes, edges, currentWorkflow: null });
+    set({ nodes, edges, currentWorkflow: null, loadVersion: get().loadVersion + 1 });
   },
 }));
