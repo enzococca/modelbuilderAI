@@ -130,7 +130,7 @@ async def run_workflow(workflow_id: str, db: AsyncSession = Depends(get_db)):
                 session.add(WorkflowExecutionRow(
                     workflow_id=workflow_id,
                     status="completed",
-                    results={k: str(v)[:10000] for k, v in results.items()},
+                    results={k: str(v) for k, v in results.items()},
                 ))
                 await session.commit()
         except Exception as e:

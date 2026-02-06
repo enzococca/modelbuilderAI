@@ -32,6 +32,8 @@ const tutorials = [
   { id: '15', file: '15-chunker-documento.json', label: '15. Chunker Doc', desc: 'Splitta → Analizza → Sintesi' },
   { id: '16', file: '16-meta-agent.json', label: '16. Meta-Agent', desc: 'Sub-workflow ricorsivo' },
   { id: '17', file: '17-gis-analysis.json', label: '17. GIS Analysis', desc: 'Vettori + Raster → Mappa' },
+  { id: '18', file: '18-document-task-extraction.json', label: '18. Doc Task Extract', desc: 'Cerca nei file → Estrai task' },
+  { id: '19', file: '19-project-analyzer.json', label: '19. Project Analyzer', desc: 'Leggi progetto → Riassunto' },
 ];
 
 interface Props {

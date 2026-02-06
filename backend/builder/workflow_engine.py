@@ -57,16 +57,20 @@ class WorkflowEngine:
     def status(self) -> PipelineStatus:
         return self._status
 
-    async def _emit(self) -> None:
+    async def _emit(self, full_results: bool = False) -> None:
         """Broadcast current status via WebSocket if a callback was provided."""
         if self._broadcast is None:
             return
+        if full_results:
+            results = {k: str(v) for k, v in self._status.results.items()}
+        else:
+            results = {k: str(v)[:500] for k, v in self._status.results.items()}
         await self._broadcast({
             "type": "workflow_status",
             "workflow_id": self.workflow_id,
             "status": self._status.status,
             "node_statuses": {k: v.value for k, v in self._status.node_statuses.items()},
-            "results": {k: str(v)[:500] for k, v in self._status.results.items()},
+            "results": results,
             "error": self._status.error,
         })
 
@@ -112,7 +116,7 @@ class WorkflowEngine:
                 return self._results
 
         self._status.status = "completed"
-        await self._emit()
+        await self._emit(full_results=True)
         return self._results
 
     async def _execute_node(self, node: WorkflowNode, initial_input: str) -> str:
@@ -286,6 +290,12 @@ class WorkflowEngine:
         except Exception:
             pass  # Don't fail workflow for analytics
 
+    @staticmethod
+    def _strip_artifacts(text: str) -> str:
+        """Remove ```artifact blocks from text to avoid sending large binary data to agents."""
+        import re
+        return re.sub(r"```artifact\s*\n[\s\S]*?```", "[artifact rimosso]", text)
+
     async def _run_agent_node(self, node: WorkflowNode, input_text: str) -> str:
         """Run an agent node."""
         data = node.data
@@ -293,6 +303,9 @@ class WorkflowEngine:
         system_prompt = _get(data, "systemPrompt", "system_prompt", "You are a helpful assistant.")
         temperature = data.get("temperature", 0.7)
         max_tokens = _get(data, "maxTokens", "max_tokens", 4096)
+
+        # Strip artifact blocks to save tokens — agents shouldn't process raw GeoJSON/images
+        input_text = self._strip_artifacts(input_text)
 
         agent = create_agent(
             model,
@@ -374,6 +387,27 @@ class WorkflowEngine:
                     config["how"] = data["how"]
                 if data.get("band"):
                     config["band"] = data["band"]
+
+            elif tool_name == "file_search":
+                config["source"] = data.get("source", "local")
+                config["mode"] = data.get("mode", "filename")
+                config["max_results"] = data.get("max_results", 20)
+                if data.get("roots"):
+                    config["roots"] = data["roots"]
+                if data.get("extensions"):
+                    config["extensions"] = data["extensions"]
+
+            elif tool_name == "email_search":
+                config["source"] = data.get("source", "gmail")
+                config["max_results"] = data.get("max_results", 20)
+                for k in ("imap_server", "imap_port", "imap_username", "imap_password"):
+                    if data.get(k):
+                        config[k] = data[k]
+
+            elif tool_name == "project_analyzer":
+                config["max_depth"] = data.get("max_depth", 4)
+                config["max_file_size"] = data.get("max_file_size", 50000)
+                config["max_files_read"] = data.get("max_files_read", 20)
 
             # Also merge any explicit "config" dict from legacy format
             explicit_config = data.get("config", {})

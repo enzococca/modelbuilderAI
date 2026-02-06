@@ -1,0 +1,67 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "Termine di Ricerca",
+        "inputType": "text",
+        "defaultValue": "pyarchinit"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 180 },
+      "data": {
+        "label": "Ricerca nei Documenti",
+        "tool": "file_search",
+        "source": "local",
+        "mode": "content",
+        "max_results": 50,
+        "roots": "/Users/enzo/Downloads/WP 05 - Desktop Tools Development",
+        "extensions": "pdf,docx,pptx,txt,md"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 370 },
+      "data": {
+        "label": "Estrattore Info",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un analista di documenti. Ti vengono forniti i risultati di una ricerca testuale all'interno di vari file (PDF, DOCX, PPTX, TXT).\n\nIl tuo compito:\n1. Analizza TUTTI gli estratti forniti\n2. Estrai TUTTE le informazioni rilevanti sulla query cercata\n3. Per ogni file, riporta:\n   - Nome file e percorso\n   - Contesto in cui appare la query\n   - Informazioni chiave estratte\n4. Organizza le informazioni per categoria (descrizioni generali, task/attività, scadenze, riferimenti tecnici, ecc.)\n\nSii esaustivo e preciso. Includi citazioni dirette quando rilevante.",
+        "temperature": 0.3,
+        "maxTokens": 8192
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 300, "y": 570 },
+      "data": {
+        "label": "Ordinatore Task",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un project manager esperto. Ricevi un'analisi dettagliata di tutti i documenti che menzionano un determinato argomento.\n\nIl tuo compito:\n1. Identifica TUTTI i task/attività/compiti menzionati nei documenti\n2. Per ogni task estrai:\n   - Titolo/descrizione del task\n   - File sorgente dove è stato trovato\n   - Scadenza o riferimento temporale (se presente)\n   - Priorità stimata (alta/media/bassa)\n   - Stato (completato/in corso/da fare, se deducibile)\n   - Dipendenze da altri task (se menzionate)\n3. Ordina i task per tempistica (prima le scadenze più vicine)\n4. Crea una tabella markdown riepilogativa\n\nFormato output:\n## Elenco Task Ordinati per Tempistica\n\n| # | Task | Scadenza | Priorità | Stato | File Sorgente |\n|---|------|----------|----------|-------|---------------|\n\n## Dettaglio Task\n(Per ogni task, una breve descrizione con contesto)\n\n## Riepilogo\n- Totale task trovati: N\n- Da completare: N\n- In corso: N\n- Completati: N",
+        "temperature": 0.2,
+        "maxTokens": 8192
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 300, "y": 770 },
+      "data": {
+        "label": "Report Task",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

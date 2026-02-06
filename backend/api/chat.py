@@ -36,10 +36,13 @@ Available node types:
 - meta_agent: execute a sub-workflow recursively (data: label, maxDepth, workflowDefinition: {nodes, edges})
 - chunker: split long text into chunks, process each with an agent (data: label, model, systemPrompt, chunkSize, overlap)
 
-Available tools: web_search, code_executor, file_processor, database_tool, image_tool, ml_pipeline, website_generator, gis_tool.
+Available tools: web_search, code_executor, file_processor, database_tool, image_tool, ml_pipeline, website_generator, gis_tool, file_search, email_search, project_analyzer.
 - ml_pipeline: train/predict/evaluate ML models (operation: train|predict|evaluate|list_models, modelType, targetColumn, modelName)
 - website_generator: generate HTML/CSS/JS as ZIP
 - gis_tool: geospatial analysis (operation: info|vector_analysis|raster_analysis|dem_analysis|buffer|map|reproject|overlay)
+- file_search: search files (source: local|dropbox|gdrive|onedrive, max_results, roots for local)
+- email_search: search emails (source: gmail|outlook|imap, max_results, imap_server/port/username/password for imap)
+- project_analyzer: analyze a software project directory structure, dependencies, key files (max_depth, max_files_read)
 
 Available models: claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001, claude-opus-4-6, gpt-4o, gpt-4o-mini.
 

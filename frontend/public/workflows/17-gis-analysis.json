@@ -60,26 +60,22 @@
       "data": {
         "label": "Report GIS",
         "model": "claude-sonnet-4-5-20250929",
-        "systemPrompt": "Sei un esperto GIS. Ricevi i risultati di un'analisi geospaziale che include:\n- Metadati del file (CRS, features, bounds, colonne)\n- Analisi vettoriale (aree, lunghezze, centroidi)\n\nCrea un report professionale che:\n1. Descriva il dataset (CRS, features, estensione)\n2. Riassuma le statistiche geometriche\n3. Identifichi pattern spaziali\n4. Suggerisca ulteriori analisi utili\n\nFormatta in Markdown.",
+        "systemPrompt": "Sei un esperto GIS. Ricevi i risultati di un'analisi geospaziale che include:\n- Metadati del file (CRS, features, bounds, colonne)\n- Analisi vettoriale (aree, lunghezze, centroidi)\n\nCrea un report professionale che:\n1. Descriva il dataset (CRS, features, estensione)\n2. Riassuma le statistiche geometriche\n3. Identifichi pattern spaziali\n4. Suggerisca ulteriori analisi utili\n\nIMPORTANTE: Non includere blocchi ```artifact nel tuo output. Scrivi solo testo Markdown.\n\nFormatta in Markdown.",
         "temperature": 0.5,
         "maxTokens": 4096
       }
     },
     {
       "id": "node_7",
-      "type": "aggregator",
-      "position": { "x": 450, "y": 730 },
-      "data": {
-        "label": "Report + Mappa",
-        "strategy": "concatenate",
-        "separator": "\n\n---\n\n"
-      }
+      "type": "output",
+      "position": { "x": 225, "y": 730 },
+      "data": { "label": "Report", "outputFormat": "markdown" }
     },
     {
       "id": "node_8",
       "type": "output",
-      "position": { "x": 450, "y": 900 },
-      "data": { "label": "Risultato GIS", "outputFormat": "text" }
+      "position": { "x": 650, "y": 400 },
+      "data": { "label": "Mappa Interattiva", "outputFormat": "map" }
     }
   ],
   "edges": [
@@ -90,7 +86,6 @@
     { "id": "e3-5", "source": "node_3", "target": "node_5" },
     { "id": "e5-6", "source": "node_5", "target": "node_6" },
     { "id": "e6-7", "source": "node_6", "target": "node_7" },
-    { "id": "e4-7", "source": "node_4", "target": "node_7" },
-    { "id": "e7-8", "source": "node_7", "target": "node_8" }
+    { "id": "e4-8", "source": "node_4", "target": "node_8" }
   ]
 }

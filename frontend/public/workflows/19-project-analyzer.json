@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "Percorso Progetto",
+        "inputType": "text",
+        "defaultValue": "/Users/enzo/Documents/modelbuilderAI"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 180 },
+      "data": {
+        "label": "Analisi Progetto",
+        "tool": "project_analyzer",
+        "max_depth": 4,
+        "max_files_read": 20
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 370 },
+      "data": {
+        "label": "Generatore Riassunto",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un esperto di software engineering. Ti viene fornita un'analisi strutturale completa di un progetto software (albero directory, statistiche file, dipendenze, contenuto dei file chiave).\n\nIl tuo compito:\n1. Spiega in modo chiaro e discorsivo cosa fa il progetto\n2. Descrivi come è organizzato (architettura, cartelle principali, separazione frontend/backend se presente)\n3. Elenca le tecnologie e i framework usati\n4. Identifica i componenti principali e come interagiscono tra loro\n5. Nota eventuali pattern architetturali (MVC, microservizi, monolite, ecc.)\n6. Menziona le dipendenze più importanti e il loro ruolo\n\nScrivi in modo chiaro e accessibile, come se il lettore vedesse il progetto per la prima volta. Usa il formato markdown con sezioni e sottosezioni.",
+        "temperature": 0.3,
+        "maxTokens": 8192
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 300, "y": 570 },
+      "data": {
+        "label": "Riassunto Progetto",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

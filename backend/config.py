@@ -28,6 +28,35 @@ class Settings(BaseSettings):
     # LM Studio (OpenAI-compatible API)
     lmstudio_base_url: str = "http://localhost:1234"
 
+    # --- File Search: Dropbox ---
+    dropbox_app_key: str = ""
+    dropbox_app_secret: str = ""
+    dropbox_refresh_token: str = ""
+
+    # --- File Search: Google Drive ---
+    google_drive_credentials_json: str = ""  # path to service account JSON
+    google_drive_delegated_user: str = ""
+
+    # --- File Search / Email: Microsoft (OneDrive + Outlook) ---
+    microsoft_tenant_id: str = ""
+    microsoft_client_id: str = ""
+    microsoft_client_secret: str = ""
+    microsoft_user_id: str = ""
+
+    # --- File Search: Local ---
+    file_search_local_roots: str = ""  # comma-separated root dirs
+
+    # --- Email Search: Gmail ---
+    gmail_credentials_json: str = ""  # path to OAuth client credentials
+    gmail_token_json: str = ""  # path to cached token.json
+
+    # --- Email Search: IMAP ---
+    imap_server: str = ""
+    imap_port: int = 993
+    imap_username: str = ""
+    imap_password: str = ""
+    imap_use_ssl: bool = True
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",")]

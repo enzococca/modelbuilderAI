@@ -91,6 +91,27 @@ NODE_REGISTRY: list[NodeDefinition] = [
         description="Geospatial analysis: shapefiles, geopackages, GeoTIFF, DEM, map generation",
         default_data={"tool_name": "gis_tool", "config": {"operation": "info"}},
     ),
+    NodeDefinition(
+        type="tool",
+        label="File Search",
+        category="tools",
+        description="Search files across local PC, Dropbox, Google Drive, OneDrive",
+        default_data={"tool_name": "file_search", "config": {"source": "local", "max_results": 20}},
+    ),
+    NodeDefinition(
+        type="tool",
+        label="Email Search",
+        category="tools",
+        description="Search emails across Gmail, Outlook, IMAP",
+        default_data={"tool_name": "email_search", "config": {"source": "gmail", "max_results": 20}},
+    ),
+    NodeDefinition(
+        type="tool",
+        label="Project Analyzer",
+        category="tools",
+        description="Analyze a software project: structure, dependencies, key files",
+        default_data={"tool_name": "project_analyzer", "config": {"max_depth": 4}},
+    ),
     # Advanced nodes
     NodeDefinition(
         type="meta_agent",

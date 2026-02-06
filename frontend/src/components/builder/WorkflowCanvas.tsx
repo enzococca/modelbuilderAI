@@ -556,13 +556,16 @@ export function WorkflowCanvas() {
                 )}
                 {Object.entries(executionResults).map(([nid, result]) => {
                   const nodeDef = nodes.find(n => n.id === nid);
-                  const nodeLabel = (nodeDef?.data as Record<string, unknown>)?.label as string ?? nid;
+                  const nodeData = nodeDef?.data as Record<string, unknown> | undefined;
+                  const nodeLabel = (nodeData?.label as string) ?? nid;
+                  const outputFormat = (nodeData?.outputFormat as string) ?? undefined;
                   return (
                     <ResultsViewer
                       key={nid}
                       nodeId={nid}
                       label={nodeLabel}
                       content={result}
+                      outputFormat={outputFormat}
                     />
                   );
                 })}

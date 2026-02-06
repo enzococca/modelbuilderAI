@@ -151,7 +151,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
             <div>
               <label className={labelStyles}>Tools</label>
               <div className="space-y-1">
-                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool'].map(tool => {
+                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool', 'file_search', 'email_search', 'project_analyzer'].map(tool => {
                   const tools = (data.tools as string[]) ?? [];
                   return (
                     <label key={tool} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -285,6 +285,8 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="text">Text</option>
                 <option value="markdown">Markdown</option>
                 <option value="json">JSON</option>
+                <option value="map">Mappa (GeoJSON)</option>
+                <option value="html">HTML / Web Preview</option>
                 <option value="file">File</option>
                 <option value="email">Email</option>
                 <option value="pdf">PDF</option>
@@ -330,6 +332,9 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="ml_pipeline">ML Pipeline</option>
                 <option value="website_generator">Website Generator</option>
                 <option value="gis_tool">GIS Analysis</option>
+                <option value="file_search">File Search</option>
+                <option value="email_search">Email Search</option>
+                <option value="project_analyzer">Project Analyzer</option>
               </select>
             </div>
 
@@ -579,6 +584,176 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                     </select>
                   </div>
                 )}
+              </>
+            )}
+
+            {/* File Search config */}
+            {(data.tool as string) === 'file_search' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Source</label>
+                  <select
+                    value={(data.source as string) ?? 'local'}
+                    onChange={e => update('source', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="local">Local PC</option>
+                    <option value="dropbox">Dropbox</option>
+                    <option value="gdrive">Google Drive</option>
+                    <option value="onedrive">OneDrive / Teams</option>
+                  </select>
+                </div>
+                {(data.source as string || 'local') === 'local' && (
+                  <div>
+                    <label className={labelStyles}>Search Mode</label>
+                    <select
+                      value={(data.mode as string) ?? 'filename'}
+                      onChange={e => update('mode', e.target.value)}
+                      className={selectStyles}
+                    >
+                      <option value="filename">Filename match</option>
+                      <option value="content">Content search (inside files)</option>
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyles}>Max Results</label>
+                  <input
+                    type="number"
+                    min={1} max={100}
+                    value={(data.max_results as number) ?? 20}
+                    onChange={e => update('max_results', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                </div>
+                {(data.source as string || 'local') === 'local' && (
+                  <div>
+                    <label className={labelStyles}>Root Directories</label>
+                    <input
+                      value={(data.roots as string) ?? ''}
+                      onChange={e => update('roots', e.target.value)}
+                      placeholder="es. /Users/enzo/Documents, /tmp"
+                      className={inputStyles}
+                    />
+                    <p className="text-[10px] text-gray-600 mt-1">Separate paths with commas. Empty = home dir.</p>
+                  </div>
+                )}
+                {(data.mode as string) === 'content' && (
+                  <div>
+                    <label className={labelStyles}>File Extensions</label>
+                    <input
+                      value={(data.extensions as string) ?? 'pdf,docx,pptx,txt,md,csv'}
+                      onChange={e => update('extensions', e.target.value)}
+                      placeholder="pdf,docx,pptx,txt,md,csv"
+                      className={inputStyles}
+                    />
+                    <p className="text-[10px] text-gray-600 mt-1">Comma-separated. Searches inside these file types.</p>
+                  </div>
+                )}
+                {(data.source as string) !== 'local' && (data.source as string) !== undefined && (
+                  <p className="text-xs text-gray-500">Credenziali configurabili in Settings.</p>
+                )}
+              </>
+            )}
+
+            {/* Email Search config */}
+            {(data.tool as string) === 'email_search' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Source</label>
+                  <select
+                    value={(data.source as string) ?? 'gmail'}
+                    onChange={e => update('source', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="gmail">Gmail</option>
+                    <option value="outlook">Outlook (Microsoft Graph)</option>
+                    <option value="imap">IMAP (generico)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Max Results</label>
+                  <input
+                    type="number"
+                    min={1} max={100}
+                    value={(data.max_results as number) ?? 20}
+                    onChange={e => update('max_results', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                </div>
+                {(data.source as string) === 'imap' && (
+                  <>
+                    <div>
+                      <label className={labelStyles}>IMAP Server</label>
+                      <input
+                        value={(data.imap_server as string) ?? ''}
+                        onChange={e => update('imap_server', e.target.value)}
+                        placeholder="es. imap.gmail.com"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Port</label>
+                      <input
+                        type="number"
+                        value={(data.imap_port as number) ?? 993}
+                        onChange={e => update('imap_port', parseInt(e.target.value, 10))}
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Username</label>
+                      <input
+                        value={(data.imap_username as string) ?? ''}
+                        onChange={e => update('imap_username', e.target.value)}
+                        placeholder="user@example.com"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Password</label>
+                      <input
+                        type="password"
+                        value={(data.imap_password as string) ?? ''}
+                        onChange={e => update('imap_password', e.target.value)}
+                        placeholder="App password"
+                        className={inputStyles}
+                      />
+                    </div>
+                  </>
+                )}
+                {(data.source as string) !== 'imap' && (
+                  <p className="text-xs text-gray-500">Credenziali configurabili in Settings.</p>
+                )}
+              </>
+            )}
+
+            {/* Project Analyzer config */}
+            {(data.tool as string) === 'project_analyzer' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Max Depth</label>
+                  <input
+                    type="number"
+                    min={1} max={10}
+                    value={(data.max_depth as number) ?? 4}
+                    onChange={e => update('max_depth', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">How deep to scan the directory tree.</p>
+                </div>
+                <div>
+                  <label className={labelStyles}>Max Files to Read</label>
+                  <input
+                    type="number"
+                    min={5} max={50}
+                    value={(data.max_files_read as number) ?? 20}
+                    onChange={e => update('max_files_read', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Max key files to read (README, configs, entry points).</p>
+                </div>
+                <p className="text-xs text-gray-500">Input: percorso della cartella del progetto.</p>
               </>
             )}
 
