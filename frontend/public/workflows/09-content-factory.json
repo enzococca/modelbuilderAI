@@ -1,0 +1,71 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 400, "y": 30 },
+      "data": { "label": "Topic", "inputType": "text", "defaultValue": "Come l'AI sta cambiando il settore della sanità" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 400, "y": 160 },
+      "data": { "label": "Web Search", "tool": "web_search", "queryTemplate": "{input} latest news 2025" }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 400, "y": 300 },
+      "data": { "label": "Router (Haiku)", "model": "claude-haiku-4-5-20251001", "systemPrompt": "Analizza il topic e le informazioni dal web search.\nCrea un brief per ogni formato:\n1. Blog post (1000 parole, SEO-friendly)\n2. Twitter thread (5-7 tweet)\n3. LinkedIn post (professionale, 200 parole)\n4. Newsletter (email, 500 parole)\n\nPer ogni brief includi: angolo, tono, punti chiave, CTA.\nRispondi in JSON con chiavi: blog, twitter, linkedin, newsletter.", "temperature": 0.7, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 100, "y": 470 },
+      "data": { "label": "Blog Post", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Scrivi un blog post SEO-friendly basandoti sul brief.\nIncludi: titolo H1, sottotitoli H2, intro hook, conclusione con CTA.\nTono: professionale ma accessibile.\nFormato: Markdown.", "temperature": 0.8, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 300, "y": 470 },
+      "data": { "label": "Twitter Thread", "model": "claude-haiku-4-5-20251001", "systemPrompt": "Crea un thread Twitter dal brief.\n- Tweet 1: hook che cattura attenzione\n- Tweet 2-5: punti chiave con dati\n- Tweet 6: conclusione + CTA\n- Usa emoji, mantieni < 280 char per tweet\n- Aggiungi hashtag rilevanti nell'ultimo tweet", "temperature": 0.8, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 500, "y": 470 },
+      "data": { "label": "LinkedIn Post", "model": "claude-haiku-4-5-20251001", "systemPrompt": "Scrivi un post LinkedIn professionale.\n- Apri con un hook provocatorio o dato sorprendente\n- 3-4 paragrafi brevi con interlinea\n- Chiudi con domanda per engagement\n- Tono: thought leadership\n- NO hashtag nel testo, solo alla fine", "temperature": 0.8, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_7",
+      "type": "agent",
+      "position": { "x": 700, "y": 470 },
+      "data": { "label": "Newsletter", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Scrivi una newsletter email coinvolgente.\n- Subject line accattivante (A/B: fornisci 2 opzioni)\n- Preview text (40 char)\n- Saluto personale\n- Contenuto in 3 sezioni brevi\n- CTA chiaro\n- P.S. con bonus tip", "temperature": 0.8, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_8",
+      "type": "aggregator",
+      "position": { "x": 400, "y": 640 },
+      "data": { "label": "Formattatore", "strategy": "concatenate", "separator": "\n\n========================================\n\n" }
+    },
+    {
+      "id": "node_9",
+      "type": "output",
+      "position": { "x": 400, "y": 790 },
+      "data": { "label": "Content Pack", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e3-6", "source": "node_3", "target": "node_6" },
+    { "id": "e3-7", "source": "node_3", "target": "node_7" },
+    { "id": "e4-8", "source": "node_4", "target": "node_8" },
+    { "id": "e5-8", "source": "node_5", "target": "node_8" },
+    { "id": "e6-8", "source": "node_6", "target": "node_8" },
+    { "id": "e7-8", "source": "node_7", "target": "node_8" },
+    { "id": "e8-9", "source": "node_8", "target": "node_9" }
+  ]
+}

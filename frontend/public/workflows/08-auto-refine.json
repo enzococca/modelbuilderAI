@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": { "label": "Brief", "inputType": "text", "defaultValue": "Scrivi un articolo di 500 parole sui benefici della meditazione per la produttività lavorativa" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 300, "y": 180 },
+      "data": { "label": "Generatore (Sonnet)", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Genera/migliora il contenuto richiesto.\nSe ricevi feedback dal critico, incorpora TUTTI i suggerimenti.\nNon ripetere gli stessi errori.", "temperature": 0.8, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_3",
+      "type": "loop",
+      "position": { "x": 300, "y": 340 },
+      "data": { "label": "Refine Loop", "maxIterations": 3, "exitConditionType": "keyword", "exitValue": "APPROVED", "refinementPrompt": "Migliora il contenuto in base al feedback del critico." }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 300, "y": 490 },
+      "data": { "label": "Critico (Opus)", "model": "claude-opus-4-6", "systemPrompt": "Valuta il contenuto generato su questi criteri (1-10 per ciascuno):\n\n1. Completezza: copre tutti i requisiti?\n2. Accuratezza: informazioni corrette?\n3. Chiarezza: ben scritto e organizzato?\n4. Originalità: evita luoghi comuni?\n\nScore medio = (1+2+3+4) / 4\n\nSE score >= 8:\n  → Rispondi: \"APPROVED\" + breve commento positivo\n\nSE score < 8:\n  → Rispondi con feedback specifico:\n    - Cosa manca\n    - Cosa è sbagliato\n    - Come migliorare\n    - Esempi concreti di cosa ti aspetti", "temperature": 0.5, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 300, "y": 650 },
+      "data": { "label": "Finale", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": { "label": "Foto + Dati", "inputType": "file", "acceptedFormats": ".jpg,.png,.pdf" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 180 },
+      "data": { "label": "Classificatore (GPT-4o)", "model": "gpt-4o", "systemPrompt": "Sei un archeologo esperto di cultura materiale. Analizza questa immagine di un reperto e fornisci:\n\n1. **Tipo**: (ceramica, litica, metallo, osso, vetro, altro)\n2. **Classe**: (es. ceramica comune, sigillata, anfora, etc.)\n3. **Forma**: descrizione morfologica\n4. **Dimensioni stimate**: basandoti sulla scala se presente\n5. **Stato di conservazione**: integro, frammentario, lacunoso\n6. **Periodo probabile**: con range cronologico\n7. **Confronti**: possibili paralleli tipologici\n\nRispondi in JSON strutturato.", "temperature": 0.3, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 150, "y": 360 },
+      "data": { "label": "DB Confronti", "tool": "database_tool", "connectionString": "sqlite:///data/db/gennaro.db", "queryTemplate": "SELECT * FROM reperti WHERE tipo = '{tipo}' ORDER BY similarity DESC LIMIT 10" }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 550, "y": 360 },
+      "data": { "label": "Analisi Tipologica", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un archeologo specializzato in analisi tipologica.\nBasandoti sulla classificazione iniziale e sui confronti dal database:\n\n1. Conferma o correggi la classificazione\n2. Identifica il tipo specifico nella tipologia di riferimento\n3. Proponi datazione con livello di confidenza\n4. Suggerisci analisi archeometriche utili\n5. Note sulla distribuzione geografica del tipo\n\nSii preciso e cita le tipologie di riferimento (es. Morel, Dragendorff, Dressel).", "temperature": 0.4, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 520 },
+      "data": { "label": "Raccogli Analisi", "strategy": "concatenate", "separator": "\n\n---\n\n" }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 350, "y": 670 },
+      "data": { "label": "Scheda RA (Opus)", "model": "claude-opus-4-6", "systemPrompt": "Genera una scheda RA (Reperto Archeologico) completa secondo lo standard ministeriale italiano.\nUsa tutte le informazioni raccolte dalle analisi precedenti.\n\nFormato:\n- Numero inventario: (da compilare)\n- Sito: (da compilare)\n- Area/US: (da compilare)\n- Classe materiale:\n- Tipo:\n- Descrizione:\n- Dimensioni:\n- Stato di conservazione:\n- Cronologia:\n- Confronti:\n- Bibliografia:\n- Analisi suggerite:\n- Note:", "temperature": 0.5, "maxTokens": 8192 }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 830 },
+      "data": { "label": "Scheda Completa", "outputFormat": "pdf" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

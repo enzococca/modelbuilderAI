@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": { "label": "PDF File", "inputType": "file", "acceptedFormats": ".pdf,.docx,.txt" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 180 },
+      "data": { "label": "File Reader", "tool": "file_processor", "operation": "read" }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 340 },
+      "data": { "label": "Analizzatore RAG", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Rispondi alla domanda dell'utente basandoti ESCLUSIVAMENTE sui documenti forniti.\n\nRegole:\n- Ogni affermazione deve avere una citazione [Fonte: nome_doc, pag. N]\n- Se l'informazione non è nei documenti, dì \"Non ho trovato questa informazione nei documenti caricati\"\n- Non inventare mai informazioni\n- Usa un tono professionale\n- Se la domanda è ambigua, chiedi chiarimenti\n\nFormato risposta:\n1. Risposta sintetica (2-3 righe)\n2. Dettagli con citazioni\n3. Eventuali informazioni correlate trovate nei documenti", "temperature": 0.3, "maxTokens": 8192 }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 300, "y": 500 },
+      "data": { "label": "Analisi + Citazioni", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

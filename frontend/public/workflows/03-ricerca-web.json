@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": { "label": "Topic", "inputType": "text", "defaultValue": "Ultime novità sull'intelligenza artificiale nel 2025" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 170 },
+      "data": { "label": "Web Search", "tool": "web_search", "queryTemplate": "{input}" }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 320 },
+      "data": { "label": "Analizzatore", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Analizza i seguenti risultati di ricerca web. Per ogni fonte:\n1. Estrai i punti chiave\n2. Valuta l'affidabilità (alta/media/bassa)\n3. Identifica le informazioni più rilevanti\nOrganizza tutto in punti sintetici.", "temperature": 0.5, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 300, "y": 480 },
+      "data": { "label": "Report Writer", "model": "claude-opus-4-6", "systemPrompt": "Basandoti sull'analisi fornita, scrivi un report professionale con:\n- Sommario esecutivo (3 righe)\n- Sezioni tematiche con i punti principali\n- Conclusioni e raccomandazioni\n- Lista delle fonti\nScrivi in italiano, tono professionale.", "temperature": 0.7, "maxTokens": 8192 }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 300, "y": 640 },
+      "data": { "label": "Report", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

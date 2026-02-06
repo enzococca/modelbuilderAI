@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Domanda", "inputType": "text", "defaultValue": "Spiega cos'è l'intelligenza artificiale in modo semplice" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Claude Sonnet", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un assistente esperto. Rispondi in modo chiaro e conciso.", "temperature": 0.7, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_3",
+      "type": "output",
+      "position": { "x": 300, "y": 350 },
+      "data": { "label": "Risultato", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" }
+  ]
+}

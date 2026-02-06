@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": { "label": "Richiesta", "inputType": "text", "defaultValue": "Scrivi una spiegazione chiara e completa del teorema di Bayes, con 3 esempi pratici dal mondo reale" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 170 },
+      "data": {
+        "label": "Generatore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Genera il contenuto richiesto con la massima qualità e completezza. Struttura la risposta in modo chiaro con titoli, sottotitoli ed esempi.",
+        "temperature": 0.8,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 340 },
+      "data": {
+        "label": "Scorer (1-10)",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un valutatore rigoroso. Analizza il contenuto ricevuto e assegna un punteggio da 1 a 10.\n\nCriteri (peso uguale):\n- Completezza: tutti gli aspetti richiesti sono coperti?\n- Accuratezza: le informazioni sono corrette?\n- Chiarezza: è facile da capire?\n- Struttura: è ben organizzato?\n- Esempi: sono pertinenti e utili?\n\nRispondi con questo formato ESATTO:\n\nCompletezza: [1-10]\nAccuratezza: [1-10]\nChiarezza: [1-10]\nStruttura: [1-10]\nEsempi: [1-10]\n\nSCORE FINALE: [media arrotondata]\n\nFEEDBACK: [cosa manca o va migliorato, se score < 7]",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "condition",
+      "position": { "x": 350, "y": 530 },
+      "data": {
+        "label": "Score ≥ 7?",
+        "conditionType": "score_threshold",
+        "conditionValue": "7",
+        "operator": "gte"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 150, "y": 700 },
+      "data": { "label": "Approvato", "outputFormat": "markdown" }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 550, "y": 700 },
+      "data": {
+        "label": "Rigeneratore con Feedback",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Ricevi un contenuto che non ha superato il quality gate e il feedback dettagliato dello scorer.\n\nIl tuo compito:\n1. Leggi attentamente OGNI punto del feedback\n2. Riscrivi il contenuto da zero incorporando TUTTI i miglioramenti suggeriti\n3. Assicurati che ogni criterio (completezza, accuratezza, chiarezza, struttura, esempi) sia eccellente\n4. Il nuovo contenuto deve essere significativamente migliore dell'originale\n\nRispondi SOLO con il contenuto migliorato.",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 550, "y": 870 },
+      "data": { "label": "Migliorato", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5", "label": "true" },
+    { "id": "e4-6", "source": "node_4", "target": "node_6", "label": "false" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

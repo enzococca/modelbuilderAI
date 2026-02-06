@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Base layer overrides */
+@layer base {
+  html {
+    @apply h-full;
+  }
+  body {
+    @apply h-full m-0 antialiased;
+  }
+  #root {
+    @apply h-full;
+  }
+}
+
+/* Node execution animations */
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px var(--pulse-color, rgba(99, 102, 241, 0.6));
+  }
+  50% {
+    box-shadow: 0 0 20px 6px var(--pulse-color, rgba(99, 102, 241, 0.9));
+  }
+}
+
+@keyframes node-done-flash {
+  0% {
+    box-shadow: 0 0 25px 8px rgba(34, 197, 94, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.node-running {
+  animation: node-pulse 1.2s ease-in-out infinite;
+}
+
+.node-done {
+  animation: node-done-flash 0.6s ease-out forwards;
+  border-color: rgb(34, 197, 94) !important;
+}
+
+.node-error {
+  box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.6);
+  border-color: rgb(239, 68, 68) !important;
+}
+
+/* Edge animation during execution */
+.react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: edge-flow 0.5s linear infinite;
+}
+
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -10;
+  }
+}

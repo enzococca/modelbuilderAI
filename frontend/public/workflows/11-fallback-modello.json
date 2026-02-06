@@ -1,0 +1,76 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": { "label": "Task", "inputType": "text", "defaultValue": "Scrivi un sonetto in endecasillabi sulla bellezza della matematica, con rime ABAB ABAB CDC DCD" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 170 },
+      "data": {
+        "label": "Claude (Primario)",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un poeta esperto. Completa il task richiesto con la massima qualità possibile. Segui tutte le specifiche alla lettera.",
+        "temperature": 0.8,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 340 },
+      "data": {
+        "label": "Valutatore Qualità",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Valuta la qualità dell'output ricevuto su una scala da 1 a 10.\n\nCriteri:\n1. Aderenza alle specifiche richieste\n2. Qualità del contenuto\n3. Correttezza formale\n4. Creatività e originalità\n\nCalcola lo score medio.\n\nRispondi con ESATTAMENTE questo formato:\nSCORE: [numero]\n\nMotivazione: [breve spiegazione]\n\nSe score >= 7: aggiungi 'QUALITÀ SUFFICIENTE'\nSe score < 7: aggiungi 'QUALITÀ INSUFFICIENTE' e suggerimenti di miglioramento",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "condition",
+      "position": { "x": 350, "y": 510 },
+      "data": {
+        "label": "Qualità ≥ 7?",
+        "conditionType": "contains",
+        "conditionValue": "QUALITÀ SUFFICIENTE"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 150, "y": 670 },
+      "data": { "label": "Risultato Primario", "outputFormat": "markdown" }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 550, "y": 670 },
+      "data": {
+        "label": "GPT-4o (Backup)",
+        "model": "gpt-4o",
+        "systemPrompt": "Sei un poeta esperto e il tuo compito è produrre un output di altissima qualità.\nRicevi il feedback di un valutatore su un tentativo precedente.\nUsa quel feedback per produrre una versione nettamente migliore.\nSegui TUTTE le specifiche originali e incorpora ogni suggerimento.",
+        "temperature": 0.9,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 550, "y": 830 },
+      "data": { "label": "Risultato Fallback", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5", "label": "true" },
+    { "id": "e4-6", "source": "node_4", "target": "node_6", "label": "false" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

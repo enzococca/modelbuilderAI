@@ -1,0 +1,76 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": { "label": "Richiesta", "inputType": "text", "defaultValue": "Genera una lista di 5 prodotti tech in formato JSON con campi: nome, prezzo, categoria" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 170 },
+      "data": {
+        "label": "Generatore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Genera l'output richiesto dall'utente. Segui ESATTAMENTE il formato specificato nella richiesta. Se ti viene chiesto JSON, rispondi SOLO con JSON valido senza testo aggiuntivo.",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 340 },
+      "data": {
+        "label": "Validatore Formato",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un validatore di output. Controlla se l'output ricevuto rispetta il formato richiesto.\n\nRegole di validazione:\n1. Se era richiesto JSON, verifica che sia JSON valido\n2. Se era richiesta una lista, verifica che contenga il numero corretto di elementi\n3. Se erano richiesti campi specifici, verifica che siano tutti presenti\n\nSe TUTTO è corretto, rispondi ESATTAMENTE:\nVALIDO\n\nSe ci sono errori, rispondi:\nNON VALIDO\n[lista degli errori trovati]\n[suggerimenti per la correzione]",
+        "temperature": 0.3,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "condition",
+      "position": { "x": 350, "y": 510 },
+      "data": {
+        "label": "Formato OK?",
+        "conditionType": "contains",
+        "conditionValue": "VALIDO"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 150, "y": 670 },
+      "data": { "label": "Risultato Valido", "outputFormat": "markdown" }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 550, "y": 670 },
+      "data": {
+        "label": "Correttore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Ricevi un output che non ha superato la validazione e il feedback del validatore.\nCorreggi TUTTI gli errori segnalati.\nRispondi SOLO con l'output corretto, senza spiegazioni aggiuntive.",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 550, "y": 830 },
+      "data": { "label": "Risultato Corretto", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5", "label": "true" },
+    { "id": "e4-6", "source": "node_4", "target": "node_6", "label": "false" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

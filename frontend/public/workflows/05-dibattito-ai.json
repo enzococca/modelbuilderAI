@@ -1,0 +1,48 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": { "label": "Topic", "inputType": "text", "defaultValue": "L'intelligenza artificiale sostituirà i programmatori entro 10 anni" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 150, "y": 180 },
+      "data": { "label": "Pro (GPT-4o)", "model": "gpt-4o", "systemPrompt": "Sei un debater esperto che argomenta A FAVORE della posizione data.\nUsa dati, statistiche, casi di studio, e logica stringente.\nRispondi agli argomenti del tuo avversario punto per punto.\nSii persuasivo ma onesto. Ammetti i punti deboli quando necessario.\nMax 300 parole per round.", "temperature": 0.8, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 450, "y": 180 },
+      "data": { "label": "Contro (Sonnet)", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un debater esperto che argomenta CONTRO la posizione data.\nUsa dati, statistiche, casi di studio, e logica stringente.\nRispondi agli argomenti del tuo avversario punto per punto.\nSii persuasivo ma onesto. Ammetti i punti deboli quando necessario.\nMax 300 parole per round.", "temperature": 0.8, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_4",
+      "type": "aggregator",
+      "position": { "x": 300, "y": 340 },
+      "data": { "label": "Raccogli Argomenti", "strategy": "concatenate", "separator": "\n\n--- CAMBIO SPEAKER ---\n\n" }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 300, "y": 490 },
+      "data": { "label": "Giudice (Opus)", "model": "claude-opus-4-6", "systemPrompt": "Hai assistito a un dibattito. Valuta:\n\n1. **Qualità degli argomenti**: chi ha presentato prove più solide?\n2. **Risposta alle obiezioni**: chi ha gestito meglio le critiche?\n3. **Coerenza logica**: chi ha mantenuto una linea più coerente?\n4. **Punti di forza**: gli argomenti migliori di ciascuno\n5. **Verdetto finale**: chi ha vinto e perché\n6. **Sintesi**: la posizione più ragionevole considerando entrambi\n\nSii imparziale e bilancia il giudizio.", "temperature": 0.7, "maxTokens": 8192 }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 300, "y": 650 },
+      "data": { "label": "Verdetto", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}
