@@ -120,6 +120,12 @@ class WorkflowEngine:
         node_input = self._collect_input(node.id, initial_input)
 
         if node.type == NodeType.INPUT:
+            # If node has a fileId (uploaded file), resolve to actual filesystem path
+            file_id = node.data.get("fileId", "")
+            if file_id:
+                resolved_path = await self._resolve_file_path(file_id)
+                if resolved_path:
+                    return resolved_path
             # Use defaultValue from node config, fall back to source, then label
             default = _get(node.data, "defaultValue", "default_value", "")
             return node_input or default or node.data.get("source", "") or node.data.get("label", "")
@@ -149,6 +155,24 @@ class WorkflowEngine:
             return await self._run_chunker_node(node, node_input)
 
         return node_input
+
+    @staticmethod
+    async def _resolve_file_path(file_id: str) -> str | None:
+        """Resolve a fileId to its actual filesystem path from the database."""
+        try:
+            from storage.database import async_session, FileRow
+            from sqlalchemy import select
+
+            async with async_session() as session:
+                result = await session.execute(
+                    select(FileRow.path).where(FileRow.id == file_id)
+                )
+                row = result.scalar_one_or_none()
+                if row:
+                    return str(row)
+        except Exception:
+            pass
+        return None
 
     def _collect_input(self, node_id: str, initial_input: str) -> str:
         """Collect outputs from parent nodes, or use initial_input for root nodes."""

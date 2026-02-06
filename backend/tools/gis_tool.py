@@ -65,9 +65,33 @@ class GISTool(BaseTool):
 
     @staticmethod
     def _resolve_path(text: str) -> Path:
-        """Resolve a file path from input text (first line or trimmed)."""
+        """Resolve a file path from input text (first line or trimmed).
+
+        Handles:
+        - Absolute paths directly
+        - Relative paths in CWD
+        - Filenames that might be in data/uploads/ directories
+        """
         line = text.strip().splitlines()[0].strip()
-        return Path(line)
+        p = Path(line)
+
+        # If it's an absolute path that exists, use it
+        if p.is_absolute() and p.exists():
+            return p
+
+        # If relative path exists in CWD
+        if p.exists():
+            return p
+
+        # Search in uploads directory (files saved by the upload system)
+        uploads_dir = Path("data/uploads")
+        if uploads_dir.exists():
+            for match in uploads_dir.rglob(f"*{p.suffix}"):
+                # Match by original filename stored in the path
+                if match.exists():
+                    return match
+
+        return p
 
     @staticmethod
     def _save_figure(fig, name: str = "map") -> tuple[str, str]:
@@ -86,6 +110,14 @@ class GISTool(BaseTool):
 
         b64 = base64.b64encode(buf.getvalue()).decode()
         return str(out_path), b64
+
+    @staticmethod
+    def _gdf_to_geojson(gdf) -> str:
+        """Convert a GeoDataFrame to GeoJSON string for frontend rendering."""
+        # Reproject to WGS84 for Leaflet
+        if gdf.crs and not gdf.crs.is_geographic:
+            gdf = gdf.to_crs(epsg=4326)
+        return gdf.to_json()
 
     # ── operations ───────────────────────────────────────────────
 
@@ -111,6 +143,8 @@ class GISTool(BaseTool):
         geom_types = gdf.geometry.geom_type.value_counts().to_dict()
         bounds = gdf.total_bounds  # [minx, miny, maxx, maxy]
 
+        geojson_str = self._gdf_to_geojson(gdf)
+
         lines = [
             f"**Vector file**: {path.name}",
             f"- CRS: {gdf.crs}",
@@ -121,6 +155,10 @@ class GISTool(BaseTool):
             "",
             "Sample data (first 5 rows):",
             gdf.head().to_string(),
+            "",
+            "```artifact",
+            json.dumps({"type": "geojson", "name": path.name, "data": geojson_str}),
+            "```",
         ]
         return "\n".join(lines)
 
@@ -211,12 +249,14 @@ class GISTool(BaseTool):
             f"  - Y: {centroids.y.mean():.6f}",
         ])
 
-        # Auto-generate map
-        map_result = self._render_map(input_text, **kwargs)
-        if "artifact" in map_result:
-            lines.append("")
-            lines.append(map_result.split("Saved to:")[0])
-            lines.append(map_result[map_result.index("Saved to:"):])
+        # Include interactive GeoJSON map
+        geojson_str = self._gdf_to_geojson(gdf)
+        lines.extend([
+            "",
+            "```artifact",
+            json.dumps({"type": "geojson", "name": f"{path.stem}_analysis", "data": geojson_str}),
+            "```",
+        ])
 
         return "\n".join(lines)
 
@@ -281,9 +321,9 @@ class GISTool(BaseTool):
             lines.extend([
                 "",
                 f"Saved to: {out_path}",
-                f"```artifact",
-                f'{{"type": "image", "name": "raster_analysis.png", "encoding": "base64", "data": "{b64[:200]}..."}}',
-                f"```",
+                "```artifact",
+                json.dumps({"type": "image", "name": "raster_analysis.png", "data": b64}),
+                "```",
             ])
 
         return "\n".join(lines)
@@ -409,9 +449,9 @@ class GISTool(BaseTool):
             f"Slope raster saved: {slope_path}",
             f"Aspect raster saved: {aspect_path}",
             f"Map saved: {out_path}",
-            f"```artifact",
-            f'{{"type": "image", "name": "dem_analysis.png", "encoding": "base64", "data": "{b64[:200]}..."}}',
-            f"```",
+            "```artifact",
+            json.dumps({"type": "image", "name": "dem_analysis.png", "data": b64}),
+            "```",
         ])
 
         return "\n".join(lines)
@@ -464,70 +504,22 @@ class GISTool(BaseTool):
             return self._render_vector_map(path, title, cmap, column)
 
     def _render_vector_map(self, path: Path, title: str, cmap: str, column: str) -> str:
-        """Render a map from vector data."""
+        """Render an interactive map from vector data using GeoJSON."""
         import geopandas as gpd
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
 
         gdf = gpd.read_file(path)
+        geojson_str = self._gdf_to_geojson(gdf)
 
-        fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-        ax.set_facecolor("#1a1a2e")
-        fig.set_facecolor("#1a1a2e")
-
-        plot_kwargs: dict[str, Any] = {
-            "ax": ax,
-            "edgecolor": "#ffffff44",
-            "linewidth": 0.5,
-        }
-
-        # Color by column if specified and numeric
-        if column and column in gdf.columns:
-            try:
-                gdf[column] = gdf[column].astype(float)
-                plot_kwargs["column"] = column
-                plot_kwargs["cmap"] = cmap
-                plot_kwargs["legend"] = True
-                plot_kwargs["legend_kwds"] = {"shrink": 0.6}
-            except (ValueError, TypeError):
-                # Categorical column
-                plot_kwargs["column"] = column
-                plot_kwargs["cmap"] = cmap
-                plot_kwargs["legend"] = True
-                plot_kwargs["categorical"] = True
-        else:
-            # Default coloring by geometry type
-            has_poly = any(gdf.geometry.geom_type.isin(["Polygon", "MultiPolygon"]))
-            if has_poly:
-                plot_kwargs["color"] = "#4f9dda"
-                plot_kwargs["alpha"] = 0.6
-            else:
-                plot_kwargs["color"] = "#ff6b6b"
-                plot_kwargs["markersize"] = 5
-
-        gdf.plot(**plot_kwargs)
-
-        ax.set_title(title, color="white", fontsize=14, pad=10)
-        ax.tick_params(colors="white", labelsize=8)
-        for spine in ax.spines.values():
-            spine.set_color("#333")
-
-        # Add grid
-        ax.grid(True, alpha=0.15, color="white")
-
-        plt.tight_layout()
-        out_path, b64 = self._save_figure(fig, f"map_{path.stem}")
-        plt.close(fig)
+        geom_types = gdf.geometry.geom_type.value_counts().to_dict()
 
         return (
-            f"Map rendered: {title}\n"
+            f"**Map**: {title}\n"
             f"- Features: {len(gdf)}\n"
             f"- CRS: {gdf.crs}\n"
-            f"Saved to: {out_path}\n"
+            f"- Geometry: {geom_types}\n\n"
             f"```artifact\n"
-            f'{{"type": "image", "name": "map.png", "encoding": "base64", "data": "{b64[:200]}..."}}\n'
-            f"```"
+            + json.dumps({"type": "geojson", "name": title, "data": geojson_str})
+            + "\n```"
         )
 
     def _render_raster_map(self, path: Path, title: str, cmap: str) -> str:
@@ -561,9 +553,9 @@ class GISTool(BaseTool):
         return (
             f"Raster map rendered: {title}\n"
             f"Saved to: {out_path}\n"
-            f"```artifact\n"
-            f'{{"type": "image", "name": "raster_map.png", "encoding": "base64", "data": "{b64[:200]}..."}}\n'
-            f"```"
+            "```artifact\n"
+            + json.dumps({"type": "image", "name": "raster_map.png", "data": b64})
+            + "\n```"
         )
 
     def _reproject(self, input_text: str, **kwargs: Any) -> str:

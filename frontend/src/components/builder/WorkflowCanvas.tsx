@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react';
 import type { Connection, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Save, Play, Loader2, CheckCircle2, FileDown, FileUp, RotateCcw, Square, X } from 'lucide-react';
+import { Save, Play, Loader2, CheckCircle2, FileDown, FileUp, RotateCcw, Square, X, Maximize2, Minimize2 } from 'lucide-react';
 import { AgentNode } from './AgentNode';
 import { ToolNode } from './ToolNode';
 import { ConditionNode } from './ConditionNode';
@@ -22,6 +22,7 @@ import { MetaAgentNode } from './MetaAgentNode';
 import { ChunkerNode } from './ChunkerNode';
 import { NodePalette } from './NodePalette';
 import { NodeConfig } from './NodeConfig';
+import { ResultsViewer } from './ResultsViewer';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { createWorkflow, updateWorkflow, runWorkflow, exportWorkflowResults } from '@/services/api';
 import { wsClient } from '@/services/websocket';
@@ -57,6 +58,7 @@ export function WorkflowCanvas() {
   const [executionResults, setExecutionResults] = useState<Record<string, string> | null>(null);
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [resultsExpanded, setResultsExpanded] = useState(false);
 
   const { currentWorkflow, setCurrentWorkflow, loadVersion } = useWorkflowStore();
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -505,8 +507,12 @@ export function WorkflowCanvas() {
 
           {/* Execution Results Overlay */}
           {showResults && executionResults && (
-            <div className="absolute bottom-4 left-4 right-4 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm z-10">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+            <div className={`absolute bg-gray-900/95 border border-gray-700 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm z-10 transition-all ${
+              resultsExpanded
+                ? 'inset-2'
+                : 'bottom-4 left-4 right-4 max-h-[50vh]'
+            }`}>
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700 shrink-0">
                 <span className="text-sm font-medium flex items-center gap-2">
                   {executionError
                     ? <><span className="w-2 h-2 rounded-full bg-red-500" /> Errore</>
@@ -532,23 +538,32 @@ export function WorkflowCanvas() {
                       </button>
                     </>
                   )}
-                  <button onClick={() => setShowResults(false)} className="text-gray-400 hover:text-white">
+                  <button
+                    onClick={() => setResultsExpanded(v => !v)}
+                    className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"
+                    title={resultsExpanded ? 'Riduci' : 'Espandi'}
+                  >
+                    {resultsExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                  </button>
+                  <button onClick={() => { setShowResults(false); setResultsExpanded(false); }} className="text-gray-400 hover:text-white">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="p-4 overflow-y-auto max-h-48 space-y-2">
+              <div className={`p-4 overflow-y-auto space-y-2 ${resultsExpanded ? 'h-[calc(100%-2.5rem)]' : 'max-h-[calc(50vh-3rem)]'}`}>
                 {executionError && (
                   <p className="text-sm text-red-400">{executionError}</p>
                 )}
                 {Object.entries(executionResults).map(([nid, result]) => {
                   const nodeDef = nodes.find(n => n.id === nid);
-                  const label = (nodeDef?.data as Record<string, unknown>)?.label as string ?? nid;
+                  const nodeLabel = (nodeDef?.data as Record<string, unknown>)?.label as string ?? nid;
                   return (
-                    <div key={nid} className="bg-gray-800 rounded-lg p-3">
-                      <p className="text-xs text-gray-400 mb-1">{label}</p>
-                      <p className="text-sm text-gray-200 whitespace-pre-wrap">{result}</p>
-                    </div>
+                    <ResultsViewer
+                      key={nid}
+                      nodeId={nid}
+                      label={nodeLabel}
+                      content={result}
+                    />
                   );
                 })}
               </div>

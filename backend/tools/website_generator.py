@@ -62,12 +62,15 @@ class WebsiteGeneratorTool(BaseTool):
         # Build preview of files
         file_list = "\n".join(f"  - {name} ({len(content)} bytes)" for name, content in files.items())
 
+        # Build a self-contained HTML for live preview (inline CSS and JS)
+        preview_html = self._build_preview(files)
+
         return (
             f"Website generated with {len(files)} file(s):\n{file_list}\n\n"
             f"Saved to: {zip_path}\n\n"
-            f"```artifact\n"
-            f'{{"type": "zip", "name": "website.zip", "encoding": "base64", "data": "{zip_b64[:200]}..."}}\n'
-            f"```"
+            "```artifact\n"
+            + json.dumps({"type": "html", "name": "website_preview.html", "data": preview_html})
+            + "\n```"
         )
 
     def _parse_files(self, text: str) -> dict[str, str]:
@@ -102,6 +105,45 @@ class WebsiteGeneratorTool(BaseTool):
             files["index.html"] = text.strip()
 
         return files
+
+    @staticmethod
+    def _build_preview(files: dict[str, str]) -> str:
+        """Build a self-contained HTML page with CSS/JS inlined for iframe preview."""
+        html = files.get("index.html", "")
+        css = files.get("style.css", "")
+        js = files.get("script.js", "")
+
+        if not html:
+            return "<html><body><p>No HTML content generated.</p></body></html>"
+
+        # If HTML already has <link> to style.css, replace with inline <style>
+        if css:
+            import re as _re
+            # Remove external CSS link
+            html = _re.sub(
+                r'<link[^>]*href=["\']style\.css["\'][^>]*/?>',
+                f"<style>\n{css}\n</style>",
+                html,
+                flags=_re.IGNORECASE,
+            )
+            # If no link was found, inject before </head>
+            if "<style>" not in html and "</head>" in html:
+                html = html.replace("</head>", f"<style>\n{css}\n</style>\n</head>")
+
+        # If HTML has <script src="script.js">, replace with inline
+        if js:
+            import re as _re
+            html = _re.sub(
+                r'<script[^>]*src=["\']script\.js["\'][^>]*>\s*</script>',
+                f"<script>\n{js}\n</script>",
+                html,
+                flags=_re.IGNORECASE,
+            )
+            # If no script tag was found, inject before </body>
+            if f"<script>\n{js}" not in html and "</body>" in html:
+                html = html.replace("</body>", f"<script>\n{js}\n</script>\n</body>")
+
+        return html
 
     def _wrap_html(self, files: dict[str, str]) -> str:
         """Create a basic HTML page linking CSS and JS files."""
