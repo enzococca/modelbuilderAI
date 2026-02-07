@@ -5,23 +5,32 @@ from __future__ import annotations
 import re
 from typing import Any
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
-
 from config import settings
 
 
 class VectorStore:
-    """Wrapper around a ChromaDB persistent client with intelligent chunking and RAG."""
+    """Wrapper around a ChromaDB persistent client with intelligent chunking and RAG.
+
+    The ChromaDB client is created lazily on first use to avoid blocking
+    the application startup (chromadb can be slow to initialize).
+    """
 
     def __init__(self) -> None:
-        self._client = chromadb.PersistentClient(
-            path=settings.chroma_path,
-            settings=ChromaSettings(anonymized_telemetry=False),
-        )
+        self._client: Any = None
+
+    def _ensure_client(self) -> Any:
+        if self._client is None:
+            import chromadb
+            from chromadb.config import Settings as ChromaSettings
+
+            self._client = chromadb.PersistentClient(
+                path=settings.chroma_path,
+                settings=ChromaSettings(anonymized_telemetry=False),
+            )
+        return self._client
 
     def get_or_create_collection(self, name: str = "documents"):
-        return self._client.get_or_create_collection(name=name)
+        return self._ensure_client().get_or_create_collection(name=name)
 
     def add_documents(
         self,
@@ -48,7 +57,7 @@ class VectorStore:
 
     def delete_collection(self, name: str) -> None:
         try:
-            self._client.delete_collection(name)
+            self._ensure_client().delete_collection(name)
         except ValueError:
             pass  # collection doesn't exist
 
