@@ -101,13 +101,16 @@ export const validateWorkflow = (id: string) => api.post(`/workflows/${id}/valid
 // Export workflow results
 export const exportWorkflowResults = async (
   id: string,
-  format: 'zip' | 'markdown' | 'pdf' | 'docx' | 'csv' | 'xlsx' = 'zip',
+  format: 'zip' | 'markdown' | 'pdf' | 'docx' | 'csv' | 'xlsx' | 'png' = 'zip',
+  smartFormat = false,
 ) => {
-  const resp = await fetch(`/api/workflows/${id}/export?format=${format}`, { method: 'POST' });
+  const params = new URLSearchParams({ format });
+  if (smartFormat) params.set('smart_format', 'true');
+  const resp = await fetch(`/api/workflows/${id}/export?${params}`, { method: 'POST' });
   if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
   const blob = await resp.blob();
   const extMap: Record<string, string> = {
-    zip: 'zip', markdown: 'md', pdf: 'pdf', docx: 'docx', csv: 'csv', xlsx: 'xlsx',
+    zip: 'zip', markdown: 'md', pdf: 'pdf', docx: 'docx', csv: 'csv', xlsx: 'xlsx', png: 'png',
   };
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -34,6 +34,7 @@ def _build_registry() -> dict[str, type[BaseTool]]:
     from tools.file_search import FileSearchTool
     from tools.email_search import EmailSearchTool
     from tools.project_analyzer import ProjectAnalyzerTool
+    from tools.email_sender import EmailSenderTool
     return {
         "web_search": WebSearchTool,
         "code_executor": CodeExecutorTool,
@@ -46,6 +47,7 @@ def _build_registry() -> dict[str, type[BaseTool]]:
         "file_search": FileSearchTool,
         "email_search": EmailSearchTool,
         "project_analyzer": ProjectAnalyzerTool,
+        "email_sender": EmailSenderTool,
     }
 
 

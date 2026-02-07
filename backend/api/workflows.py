@@ -180,10 +180,50 @@ def _md_to_plain(text: str) -> str:
     return text
 
 
+async def _smart_format(content: str, target_format: str) -> str:
+    """Use a lightweight AI agent to reformat content for the target format."""
+    try:
+        from orchestrator.router import create_agent
+
+        prompts = {
+            "pdf": (
+                "Reformat the following text for a professional PDF document. "
+                "Remove all markdown syntax (**, *, #, ```, |---|, etc.). "
+                "Convert markdown headings to UPPERCASE titles. "
+                "Convert markdown lists to plain numbered/bulleted text. "
+                "Remove markdown table pipes and format as aligned text. "
+                "Keep the content intact, just clean the formatting. "
+                "Return ONLY the reformatted text, no explanations."
+            ),
+            "docx": (
+                "Reformat the following text for a Microsoft Word document. "
+                "Keep markdown headings (# lines) as they'll become Word headings. "
+                "Keep **bold** markers. Convert tables to clean aligned format. "
+                "Remove code fences (```). Clean up any raw formatting artifacts. "
+                "Return ONLY the reformatted text, no explanations."
+            ),
+        }
+        prompt = prompts.get(target_format)
+        if not prompt:
+            return content
+
+        agent = create_agent(
+            "claude-haiku-4-5-20251001",
+            system_prompt=prompt,
+            temperature=0.1,
+            max_tokens=8192,
+        )
+        result = await agent.chat([{"role": "user", "content": content}])
+        return result if isinstance(result, str) else content
+    except Exception:
+        return content
+
+
 @router.post("/workflows/{workflow_id}/export")
 async def export_workflow(
     workflow_id: str,
-    format: str = Query("zip", pattern="^(zip|markdown|pdf|docx|csv|xlsx)$"),
+    format: str = Query("zip", pattern="^(zip|markdown|pdf|docx|csv|xlsx|png)$"),
+    smart_format: bool = Query(False),
     db: AsyncSession = Depends(get_db),
 ):
     """Export the latest workflow execution results in various formats."""
@@ -225,6 +265,14 @@ async def export_workflow(
     if format == "pdf":
         from fpdf import FPDF
 
+        # Optionally smart-format content
+        if smart_format:
+            formatted: dict[str, str] = {}
+            for nid, content in results.items():
+                formatted[nid] = await _smart_format(str(content), "pdf")
+        else:
+            formatted = {k: str(v) for k, v in results.items()}
+
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
@@ -237,14 +285,14 @@ async def export_workflow(
         pdf.cell(usable_w, 10, _safe(wf.name), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
-        for nid, content in results.items():
+        for nid, content in formatted.items():
             label = node_labels.get(nid, nid)
             pdf.set_font("Helvetica", "B", 13)
             pdf.set_x(pdf.l_margin)
             pdf.cell(usable_w, 8, _safe(label), new_x="LMARGIN", new_y="NEXT")
             pdf.ln(2)
             pdf.set_font("Helvetica", "", 10)
-            plain = _md_to_plain(str(content))
+            plain = _md_to_plain(content) if not smart_format else content
             for line in plain.splitlines():
                 if not line.strip():
                     pdf.ln(3)
@@ -265,10 +313,18 @@ async def export_workflow(
         from docx import Document
         from docx.shared import Pt
 
+        # Optionally smart-format content
+        if smart_format:
+            docx_formatted: dict[str, str] = {}
+            for nid, content in results.items():
+                docx_formatted[nid] = await _smart_format(str(content), "docx")
+        else:
+            docx_formatted = {k: str(v) for k, v in results.items()}
+
         doc = Document()
         doc.add_heading(wf.name, level=0)
 
-        for nid, content in results.items():
+        for nid, content in docx_formatted.items():
             label = node_labels.get(nid, nid)
             doc.add_heading(label, level=1)
             text = str(content)
@@ -391,6 +447,81 @@ async def export_workflow(
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f'attachment; filename="{wf.name}.xlsx"'},
         )
+
+    # ── PNG ────────────────────────────────────────────────
+    if format == "png":
+        from fpdf import FPDF
+
+        # Generate PDF first (reuse PDF logic)
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+
+        def _safe_png(text: str) -> str:
+            return text.encode("latin-1", "replace").decode("latin-1")
+
+        pdf.set_font("Helvetica", "B", 16)
+        pdf.cell(usable_w, 10, _safe_png(wf.name), new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(4)
+
+        for nid, content in results.items():
+            label = node_labels.get(nid, nid)
+            pdf.set_font("Helvetica", "B", 13)
+            pdf.set_x(pdf.l_margin)
+            pdf.cell(usable_w, 8, _safe_png(label), new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(2)
+            pdf.set_font("Helvetica", "", 10)
+            plain = _md_to_plain(str(content))
+            for line in plain.splitlines():
+                if not line.strip():
+                    pdf.ln(3)
+                else:
+                    pdf.set_x(pdf.l_margin)
+                    pdf.multi_cell(usable_w, 5, _safe_png(line))
+            pdf.ln(6)
+
+        pdf_bytes = pdf.output()
+
+        # Convert PDF pages to PNG using PyMuPDF
+        try:
+            import fitz  # PyMuPDF
+
+            doc_pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+            images = []
+            dpi = 150
+            matrix = fitz.Matrix(dpi / 72, dpi / 72)
+
+            for page in doc_pdf:
+                pix = page.get_pixmap(matrix=matrix)
+                img_bytes = pix.tobytes("png")
+                images.append(img_bytes)
+            doc_pdf.close()
+
+            if len(images) == 1:
+                buf = io.BytesIO(images[0])
+            else:
+                # Stack pages vertically using Pillow
+                from PIL import Image as PILImage
+                pil_images = [PILImage.open(io.BytesIO(b)) for b in images]
+                total_height = sum(im.height for im in pil_images)
+                max_width = max(im.width for im in pil_images)
+                combined = PILImage.new("RGB", (max_width, total_height), (255, 255, 255))
+                y_offset = 0
+                for im in pil_images:
+                    combined.paste(im, (0, y_offset))
+                    y_offset += im.height
+                buf = io.BytesIO()
+                combined.save(buf, format="PNG")
+                buf.seek(0)
+
+            return StreamingResponse(
+                buf,
+                media_type="image/png",
+                headers={"Content-Disposition": f'attachment; filename="{wf.name}.png"'},
+            )
+        except ImportError:
+            raise HTTPException(500, "PyMuPDF (fitz) not installed. Run: pip install PyMuPDF")
 
     # ── ZIP (default) ─────────────────────────────────────
     buf = io.BytesIO()

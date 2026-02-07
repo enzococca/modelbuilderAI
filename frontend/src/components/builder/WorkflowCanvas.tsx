@@ -20,6 +20,7 @@ import { LoopNode } from './LoopNode';
 import { AggregatorNode } from './AggregatorNode';
 import { MetaAgentNode } from './MetaAgentNode';
 import { ChunkerNode } from './ChunkerNode';
+import { DeletableEdge } from './DeletableEdge';
 import { NodePalette } from './NodePalette';
 import { NodeConfig } from './NodeConfig';
 import { ResultsViewer } from './ResultsViewer';
@@ -39,6 +40,10 @@ const nodeTypes = {
   aggregator: AggregatorNode,
   meta_agent: MetaAgentNode,
   chunker: ChunkerNode,
+};
+
+const edgeTypes = {
+  default: DeletableEdge,
 };
 
 let nodeId = 0;
@@ -511,6 +516,8 @@ export function WorkflowCanvas() {
             onNodeClick={onNodeClick}
             onPaneClick={() => setSelectedNode(null)}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            deleteKeyCode="Delete"
             fitView
             className="bg-gray-950"
           >
@@ -537,16 +544,17 @@ export function WorkflowCanvas() {
                   {currentWorkflow && (
                     <div className="flex items-center gap-0.5">
                       {([
-                        ['markdown', '.md', 'Markdown'],
-                        ['pdf', '.pdf', 'PDF'],
-                        ['docx', '.docx', 'Word'],
-                        ['csv', '.csv', 'CSV'],
-                        ['xlsx', '.xlsx', 'Excel'],
-                        ['zip', 'ZIP', 'ZIP'],
-                      ] as const).map(([fmt, label, title]) => (
+                        ['markdown', '.md', 'Markdown', false],
+                        ['pdf', '.pdf', 'PDF (smart)', true],
+                        ['docx', '.docx', 'Word (smart)', true],
+                        ['csv', '.csv', 'CSV', false],
+                        ['xlsx', '.xlsx', 'Excel', false],
+                        ['png', '.png', 'Immagine PNG', false],
+                        ['zip', 'ZIP', 'ZIP', false],
+                      ] as const).map(([fmt, label, title, smart]) => (
                         <button
                           key={fmt}
-                          onClick={() => exportWorkflowResults(currentWorkflow.id, fmt).catch(console.error)}
+                          onClick={() => exportWorkflowResults(currentWorkflow.id, fmt, smart).catch(console.error)}
                           className="text-[10px] text-gray-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-gray-700"
                           title={`Scarica ${title}`}
                         >

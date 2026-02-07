@@ -112,6 +112,13 @@ NODE_REGISTRY: list[NodeDefinition] = [
         description="Analyze a software project: structure, dependencies, key files",
         default_data={"tool_name": "project_analyzer", "config": {"max_depth": 4}},
     ),
+    NodeDefinition(
+        type="tool",
+        label="Email Sender",
+        category="tools",
+        description="Send emails via Gmail, Outlook, or SMTP",
+        default_data={"tool_name": "email_sender", "config": {"source": "smtp"}},
+    ),
     # Advanced nodes
     NodeDefinition(
         type="meta_agent",

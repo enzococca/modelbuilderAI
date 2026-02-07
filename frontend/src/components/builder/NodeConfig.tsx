@@ -151,7 +151,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
             <div>
               <label className={labelStyles}>Tools</label>
               <div className="space-y-1">
-                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool', 'file_search', 'email_search', 'project_analyzer'].map(tool => {
+                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool', 'file_search', 'email_search', 'project_analyzer', 'email_sender'].map(tool => {
                   const tools = (data.tools as string[]) ?? [];
                   return (
                     <label key={tool} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -335,6 +335,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="file_search">File Search</option>
                 <option value="email_search">Email Search</option>
                 <option value="project_analyzer">Project Analyzer</option>
+                <option value="email_sender">Email Sender</option>
               </select>
             </div>
 
@@ -381,21 +382,45 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
             {(data.tool as string) === 'database_tool' && (
               <>
                 <div>
+                  <label className={labelStyles}>Database Type</label>
+                  <select
+                    value={(data.dbType as string) ?? 'sqlite'}
+                    onChange={e => update('dbType', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="sqlite">SQLite</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="mysql">MySQL</option>
+                    <option value="mongodb">MongoDB</option>
+                  </select>
+                </div>
+                <div>
                   <label className={labelStyles}>Connection String</label>
                   <input
                     value={(data.connectionString as string) ?? ''}
                     onChange={e => update('connectionString', e.target.value)}
-                    placeholder="es. sqlite:///data.db, postgresql://..."
+                    placeholder={
+                      (data.dbType as string) === 'postgresql' ? 'postgresql://user:pass@localhost:5432/mydb'
+                      : (data.dbType as string) === 'mysql' ? 'mysql://user:pass@localhost:3306/mydb'
+                      : (data.dbType as string) === 'mongodb' ? 'mongodb://localhost:27017/mydb'
+                      : 'data/db/gennaro.db (o sqlite:///path.db)'
+                    }
                     className={inputStyles}
                   />
                 </div>
                 <div>
-                  <label className={labelStyles}>Query Template</label>
+                  <label className={labelStyles}>
+                    {(data.dbType as string) === 'mongodb' ? 'Query (MongoDB)' : 'Query Template (SQL)'}
+                  </label>
                   <textarea
                     value={(data.queryTemplate as string) ?? ''}
                     onChange={e => update('queryTemplate', e.target.value)}
                     rows={3}
-                    placeholder="SELECT * FROM ... WHERE ..."
+                    placeholder={
+                      (data.dbType as string) === 'mongodb'
+                        ? 'db.collection.find({"field": "value"})'
+                        : 'SELECT * FROM ... WHERE ...'
+                    }
                     className={`${inputStyles} resize-none font-mono text-xs`}
                   />
                 </div>
@@ -754,6 +779,99 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                   <p className="text-[10px] text-gray-600 mt-1">Max key files to read (README, configs, entry points).</p>
                 </div>
                 <p className="text-xs text-gray-500">Input: percorso della cartella del progetto.</p>
+              </>
+            )}
+
+            {/* Email Sender config */}
+            {(data.tool as string) === 'email_sender' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Send via</label>
+                  <select
+                    value={(data.emailSource as string) ?? 'smtp'}
+                    onChange={e => update('emailSource', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="smtp">SMTP (generico)</option>
+                    <option value="gmail">Gmail (API)</option>
+                    <option value="outlook">Outlook (Microsoft Graph)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>To (destinatario)</label>
+                  <input
+                    value={(data.emailTo as string) ?? ''}
+                    onChange={e => update('emailTo', e.target.value)}
+                    placeholder="user@example.com"
+                    className={inputStyles}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Subject</label>
+                  <input
+                    value={(data.emailSubject as string) ?? ''}
+                    onChange={e => update('emailSubject', e.target.value)}
+                    placeholder="Gennaro Workflow Result"
+                    className={inputStyles}
+                  />
+                </div>
+                {(data.emailSource as string) === 'smtp' && (
+                  <>
+                    <div>
+                      <label className={labelStyles}>SMTP Host</label>
+                      <input
+                        value={(data.smtpHost as string) ?? ''}
+                        onChange={e => update('smtpHost', e.target.value)}
+                        placeholder="smtp.gmail.com"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={labelStyles}>Port</label>
+                        <input
+                          type="number"
+                          value={(data.smtpPort as number) ?? 587}
+                          onChange={e => update('smtpPort', parseInt(e.target.value, 10))}
+                          className={inputStyles}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelStyles}>TLS</label>
+                        <select
+                          value={(data.smtpTls as string) ?? 'true'}
+                          onChange={e => update('smtpTls', e.target.value)}
+                          className={selectStyles}
+                        >
+                          <option value="true">Yes</option>
+                          <option value="false">No</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Username</label>
+                      <input
+                        value={(data.smtpUsername as string) ?? ''}
+                        onChange={e => update('smtpUsername', e.target.value)}
+                        placeholder="user@example.com"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Password</label>
+                      <input
+                        type="password"
+                        value={(data.smtpPassword as string) ?? ''}
+                        onChange={e => update('smtpPassword', e.target.value)}
+                        placeholder="App password"
+                        className={inputStyles}
+                      />
+                    </div>
+                  </>
+                )}
+                {(data.emailSource as string) !== 'smtp' && (
+                  <p className="text-xs text-gray-500">Credenziali configurabili in Settings (.env).</p>
+                )}
               </>
             )}
 

@@ -1,0 +1,56 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": { "label": "Topic / Argomento", "inputType": "text", "defaultValue": "Impatto dell'intelligenza artificiale generativa sul mercato del lavoro nei prossimi 5 anni" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 50, "y": 200 },
+      "data": { "label": "Technical Analyst", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un analista tecnico esperto di AI e tecnologia. Analizza l'argomento dal punto di vista TECNICO:\n- Stato attuale della tecnologia\n- Trend e sviluppi previsti\n- Limitazioni tecniche\n- Capacità emergenti\nFornisci un'analisi strutturata con dati e riferimenti.", "temperature": 0.5, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 200 },
+      "data": { "label": "Market Analyst", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un analista di mercato esperto di economia e business. Analizza l'argomento dal punto di vista ECONOMICO:\n- Impatto su industrie e settori\n- Opportunità di business\n- Modelli economici emergenti\n- Previsioni di mercato e fatturato\nFornisci un'analisi strutturata con dati e trend.", "temperature": 0.5, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 650, "y": 200 },
+      "data": { "label": "Risk Analyst", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un analista del rischio specializzato in impatti sociali e regolamentari. Analizza l'argomento dal punto di vista dei RISCHI:\n- Rischi sociali e occupazionali\n- Sfide etiche e bias\n- Rischi regolamentari\n- Scenari worst-case\n- Strategie di mitigazione\nFornisci un'analisi strutturata con valutazione di probabilità e impatto.", "temperature": 0.5, "maxTokens": 4096 }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 400 },
+      "data": { "label": "Raccogli Analisi", "strategy": "concatenate", "separator": "\n\n=== ANALISI SUCCESSIVA ===\n\n" }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 350, "y": 550 },
+      "data": { "label": "Synthesizer", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Ricevi 3 analisi parallele (tecnica, mercato, rischi) sullo stesso argomento.\nSintetizza tutto in un report esecutivo con:\n\n## Executive Summary\nSintesi in 3-5 bullet point.\n\n## Analisi Integrata\nCombina le prospettive tecnica, economica e di rischio.\n\n## Raccomandazioni\n3-5 raccomandazioni concrete e attuabili.\n\n## Conclusione\nValutazione complessiva e outlook.\n\nIl report deve essere coerente e non ripetitivo.", "temperature": 0.4, "maxTokens": 8192 }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 720 },
+      "data": { "label": "Report Integrato", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e1-4", "source": "node_1", "target": "node_4" },
+    { "id": "e2-5", "source": "node_2", "target": "node_5" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

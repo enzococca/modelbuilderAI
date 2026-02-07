@@ -77,45 +77,80 @@ class WorkflowEngine:
         })
 
     async def run(self, initial_input: str = "") -> dict[str, Any]:
-        """Execute all nodes in topological order and return results."""
+        """Execute nodes by topological level — same-level nodes run in parallel."""
         self._status.status = "running"
         await self._emit()
 
-        order = self._executor.topological_order()
+        levels = self._executor.topological_levels()
 
-        for node_id in order:
-            node = self._nodes[node_id]
+        for level in levels:
+            # ── Filter: skip nodes whose ALL incoming edges are blocked ──
+            active_nodes: list[str] = []
+            for node_id in level:
+                incoming = self._incoming_edges.get(node_id, [])
+                if incoming and all(e.id in self._blocked_edges for e in incoming):
+                    self._results[node_id] = ""
+                    self._status.results[node_id] = "[skipped]"
+                    self._status.node_statuses[node_id] = NodeStatus.DONE
+                    for edge in self._outgoing_edges.get(node_id, []):
+                        self._blocked_edges.add(edge.id)
+                    await self._emit()
+                else:
+                    active_nodes.append(node_id)
 
-            # Skip nodes whose ALL incoming edges are blocked (condition branch not taken)
-            incoming = self._incoming_edges.get(node_id, [])
-            if incoming and all(e.id in self._blocked_edges for e in incoming):
-                self._results[node_id] = ""
-                self._status.results[node_id] = "[skipped]"
-                self._status.node_statuses[node_id] = NodeStatus.DONE
-                # Propagate: block all outgoing edges from this skipped node
-                for edge in self._outgoing_edges.get(node_id, []):
-                    self._blocked_edges.add(edge.id)
-                await self._emit()
+            if not active_nodes:
                 continue
 
-            self._status.node_statuses[node_id] = NodeStatus.RUNNING
+            # Mark all active nodes as RUNNING simultaneously
+            for node_id in active_nodes:
+                self._status.node_statuses[node_id] = NodeStatus.RUNNING
             await self._emit()
-
-            # Small delay so the frontend can see the "running" state
             await asyncio.sleep(0.3)
 
-            try:
-                result = await self._execute_node(node, initial_input)
-                self._results[node_id] = result
-                self._status.results[node_id] = result
-                self._status.node_statuses[node_id] = NodeStatus.DONE
+            # ── Execute: single node directly, multiple nodes in parallel ──
+            if len(active_nodes) == 1:
+                node_id = active_nodes[0]
+                try:
+                    result = await self._execute_node(self._nodes[node_id], initial_input)
+                    self._results[node_id] = result
+                    self._status.results[node_id] = result
+                    self._status.node_statuses[node_id] = NodeStatus.DONE
+                    await self._emit()
+                except Exception as e:
+                    self._status.node_statuses[node_id] = NodeStatus.ERROR
+                    self._status.error = f"Node {node_id}: {e}"
+                    self._status.status = "error"
+                    await self._emit()
+                    return self._results
+            else:
+                # Parallel execution via asyncio.gather
+                async def _run_one(nid: str) -> tuple[str, str | Exception]:
+                    try:
+                        result = await self._execute_node(self._nodes[nid], initial_input)
+                        return (nid, result)
+                    except Exception as exc:
+                        return (nid, exc)
+
+                outcomes = await asyncio.gather(
+                    *[_run_one(nid) for nid in active_nodes]
+                )
+
+                has_error = False
+                for nid, result in outcomes:
+                    if isinstance(result, Exception):
+                        self._status.node_statuses[nid] = NodeStatus.ERROR
+                        self._status.error = f"Node {nid}: {result}"
+                        has_error = True
+                    else:
+                        self._results[nid] = result
+                        self._status.results[nid] = result
+                        self._status.node_statuses[nid] = NodeStatus.DONE
+
                 await self._emit()
-            except Exception as e:
-                self._status.node_statuses[node_id] = NodeStatus.ERROR
-                self._status.error = f"Node {node_id}: {e}"
-                self._status.status = "error"
-                await self._emit()
-                return self._results
+                if has_error:
+                    self._status.status = "error"
+                    await self._emit()
+                    return self._results
 
         self._status.status = "completed"
         await self._emit(full_results=True)
@@ -383,9 +418,12 @@ class WorkflowEngine:
                 config["timeout"] = data.get("timeout", 30)
             elif tool_name == "database_tool":
                 conn = _get(data, "connectionString", "connection_string", "")
+                db_type = _get(data, "dbType", "db_type", "")
                 query_tpl = _get(data, "queryTemplate", "query_template", "")
                 if conn:
                     config["connection_string"] = conn
+                if db_type:
+                    config["db_type"] = db_type
                 if query_tpl:
                     config["query"] = query_tpl.replace("{input}", input_text)
             elif tool_name == "file_processor":
@@ -441,6 +479,21 @@ class WorkflowEngine:
                 config["max_depth"] = data.get("max_depth", 4)
                 config["max_file_size"] = data.get("max_file_size", 50000)
                 config["max_files_read"] = data.get("max_files_read", 20)
+
+            elif tool_name == "email_sender":
+                config["source"] = _get(data, "emailSource", "email_source", "smtp")
+                config["to"] = _get(data, "emailTo", "email_to", "")
+                config["subject"] = _get(data, "emailSubject", "email_subject", "Gennaro Workflow Result")
+                if data.get("smtpHost"):
+                    config["smtp_host"] = data["smtpHost"]
+                if data.get("smtpPort"):
+                    config["smtp_port"] = data["smtpPort"]
+                if data.get("smtpUsername"):
+                    config["smtp_username"] = data["smtpUsername"]
+                if data.get("smtpPassword"):
+                    config["smtp_password"] = data["smtpPassword"]
+                if data.get("smtpTls") is not None:
+                    config["smtp_tls"] = data["smtpTls"] != "false"
 
             # Also merge any explicit "config" dict from legacy format
             explicit_config = data.get("config", {})

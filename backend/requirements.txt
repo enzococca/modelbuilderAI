@@ -40,6 +40,8 @@ google-auth-oauthlib>=1.2.0
 fpdf2>=2.7.0
 openpyxl>=3.1.0
 markdown>=3.5.0
+PyMuPDF>=1.24.0
+Pillow>=10.0.0
 
 # Utilities
 rich>=13.0.0

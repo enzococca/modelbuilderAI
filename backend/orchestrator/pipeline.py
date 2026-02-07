@@ -41,6 +41,30 @@ class PipelineExecutor:
                     queue.append(t)
         return order
 
+    def topological_levels(self) -> list[list[str]]:
+        """Return nodes grouped by execution level for parallel execution.
+
+        Nodes within the same level have no inter-dependencies and can run
+        concurrently via ``asyncio.gather``.
+        """
+        in_degree: dict[str, int] = {nid: 0 for nid in self._nodes}
+        for src, targets in self._adjacency.items():
+            for t in targets:
+                in_degree[t] = in_degree.get(t, 0) + 1
+
+        queue = [nid for nid, deg in in_degree.items() if deg == 0]
+        levels: list[list[str]] = []
+        while queue:
+            levels.append(list(queue))
+            next_queue: list[str] = []
+            for nid in queue:
+                for t in self._adjacency.get(nid, []):
+                    in_degree[t] -= 1
+                    if in_degree[t] == 0:
+                        next_queue.append(t)
+            queue = next_queue
+        return levels
+
     def validate(self) -> list[str]:
         """Return a list of validation errors (empty = valid)."""
         errors: list[str] = []

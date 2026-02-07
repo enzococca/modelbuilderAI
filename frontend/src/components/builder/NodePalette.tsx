@@ -34,6 +34,7 @@ const tutorials = [
   { id: '17', file: '17-gis-analysis.json', label: '17. GIS Analysis', desc: 'Vettori + Raster → Mappa' },
   { id: '18', file: '18-document-task-extraction.json', label: '18. Doc Task Extract', desc: 'Cerca nei file → Estrai task' },
   { id: '19', file: '19-project-analyzer.json', label: '19. Project Analyzer', desc: 'Leggi progetto → Riassunto' },
+  { id: '20', file: '20-parallel-analysis.json', label: '20. Parallel Analysis', desc: '3 analisti in parallelo → Sintesi' },
 ];
 
 interface Props {
