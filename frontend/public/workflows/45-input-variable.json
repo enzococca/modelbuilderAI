@@ -1,0 +1,48 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Testo Originale", "inputType": "text", "defaultValue": "L'intelligenza artificiale sta rivoluzionando il settore sanitario con diagnosi piu rapide e precise.", "setVariable": "testo_originale" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 100, "y": 230 },
+      "data": { "label": "Traduci EN", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Traduci il testo in inglese. Rispondi solo con la traduzione.", "temperature": 0.3, "maxTokens": 512, "setVariable": "traduzione_en" }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 500, "y": 230 },
+      "data": { "label": "Traduci FR", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Traduci il testo in francese. Rispondi solo con la traduzione.", "temperature": 0.3, "maxTokens": 512, "setVariable": "traduzione_fr" }
+    },
+    {
+      "id": "node_4",
+      "type": "input",
+      "position": { "x": 300, "y": 420 },
+      "data": { "label": "Usa Variabili", "inputType": "variable", "defaultValue": "Originale: {var:testo_originale}\n\nEnglish: {var:traduzione_en}\n\nFrancais: {var:traduzione_fr}" }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 300, "y": 590 },
+      "data": { "label": "Confronto", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Ricevi un testo originale e le sue traduzioni. Confronta le traduzioni e commenta:\n1. Accuratezza\n2. Differenze stilistiche\n3. Eventuali sfumature perse", "temperature": 0.5, "maxTokens": 1024 }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 300, "y": 760 },
+      "data": { "label": "Confronto Traduzioni", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}

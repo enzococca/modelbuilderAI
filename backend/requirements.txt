@@ -43,5 +43,11 @@ markdown>=3.5.0
 PyMuPDF>=1.24.0
 Pillow>=10.0.0
 
+# Web scraping
+beautifulsoup4>=4.12.0
+
+# Charts
+plotly>=5.18.0
+
 # Utilities
 rich>=13.0.0

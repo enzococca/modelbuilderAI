@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   BookOpen, Bot, Wrench, Cpu, ChevronDown, ChevronRight,
   Lightbulb, AlertTriangle, Rocket, Zap, ArrowRight,
+  Clock, GitFork, Shield, ShieldCheck,
 } from 'lucide-react';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 
@@ -181,11 +182,25 @@ export function TutorialPage() {
                   ['Web Search', 'Cerca informazioni aggiornate su internet'],
                   ['File Reader', 'Legge PDF, DOCX, CSV, immagini'],
                   ['Code Executor', 'Esegue codice Python in sandbox (numpy, pandas, matplotlib, sklearn)'],
-                  ['Database Query', 'Interroga database SQL'],
+                  ['Database Query', 'Interroga database SQL (SQLite, PostgreSQL, MySQL)'],
                   ['Image Analyzer', 'Analizza immagini con vision AI'],
                   ['ML Pipeline', 'Addestra, predici, valuta modelli ML da CSV (scikit-learn)'],
                   ['Website Generator', 'Genera siti web (HTML/CSS/JS) come file ZIP'],
                   ['GIS Analysis', 'Analisi geospaziale: shapefile, geopackage, GeoTIFF, DEM, mappe'],
+                  ['Web Scraper', 'Scraping pagine web: testo, link, tabelle, selettori CSS'],
+                  ['File Manager', 'Gestione file: crea cartelle, scrivi/leggi file, copia, sposta, elimina'],
+                  ['HTTP Request', 'Chiama API REST: GET, POST, PUT, DELETE, PATCH con auth e headers'],
+                  ['Text Transformer', 'Trasformazioni testo senza AI: regex, split, join, template, conteggio'],
+                  ['Notifier', 'Notifiche: Slack, Discord, Telegram, webhook generici'],
+                  ['JSON Parser', 'Parsing JSON: estrai campi, filtra, flatten, converti in CSV'],
+                  ['Email Sender', 'Invio email via SMTP, Gmail, Outlook'],
+                  ['File Search', 'Cerca file in locale, Dropbox, Google Drive, OneDrive'],
+                  ['Email Search', 'Cerca email in Gmail, Outlook, IMAP'],
+                  ['Project Analyzer', 'Analizza struttura e dipendenze di un progetto software'],
+                  ['Telegram Bot', 'Telegram Bot API: messaggi, documenti, foto, aggiornamenti'],
+                  ['WhatsApp', 'WhatsApp Business API: messaggi, template, documenti, immagini'],
+                  ['PyArchInit', 'Query database PyArchInit: US, inventario, ceramica, siti, strutture'],
+                  ['QGIS Project', 'Parsing progetti QGIS (.qgs/.qgz): layer, info, plugin, stili'],
                 ]}
               />
             </Card>
@@ -201,8 +216,25 @@ export function TutorialPage() {
                   ['Aggregator', 'Combina risultati da branch paralleli'],
                   ['Meta-Agent', 'Esegue un sub-workflow ricorsivamente (max 3 livelli)'],
                   ['Chunker', 'Splitta testo lungo in chunk, processa ciascuno con un agente'],
+                  ['Delay', 'Pausa N secondi tra nodi (rate limiting API, attese)'],
+                  ['Switch', 'Branching multiplo N vie (keyword, regex, score match)'],
+                  ['Validator', 'Quality gate AI: valida input con pass/fail (agente + criteri + strictness)'],
                 ]}
               />
+            </Card>
+
+            <Card title="Robustezza" subtitle="Affidabilita e resilienza dei workflow" icon={Shield} accent="red">
+              <MiniTable
+                headers={['Funzione', 'Descrizione']}
+                rows={[
+                  ['Retry automatico', 'Ogni nodo puo ritentare N volte con backoff esponenziale (retryCount, retryDelay)'],
+                  ['Gestione errori', 'onError: stop (blocca), skip (salta), fallback (valore di default)'],
+                  ['Model Fallback', 'Se il modello AI primario fallisce, usa un modello di backup (fallbackModel)'],
+                  ['Timeout globale', 'Limite di tempo per l\'intero workflow (default 300s)'],
+                  ['Variable Store', 'Salva e condividi valori tra nodi con setVariable e {var:nome}'],
+                ]}
+              />
+              <Tip>Aggiungi retry e fallback ai nodi critici cliccandoci sopra: trovi i campi nella sezione "Error Handling" della configurazione.</Tip>
             </Card>
           </div>
         </div>
@@ -513,6 +545,478 @@ Indica quale performa meglio e perche, suggerendo il modello da usare in produzi
 4. Suggerimenti per ulteriori analisi`}</Prompt>
               <Tip>La mappa bypassa l'agente AI e arriva direttamente all'output come mappa interattiva Leaflet. Supporta: .shp, .gpkg, .tif. Operazioni: info, vector/raster/DEM analysis, buffer, overlay, reproject.</Tip>
             </Card>
+
+            {/* Tutorial 18 */}
+            <Card title="Tutorial 18 — Web Scraper + Analisi" subtitle="Scraping parallelo: testo, link, tabelle da qualsiasi pagina" icon={BookOpen} accent="blue">
+              <Diagram>{`                 ┌──────────────────┐
+              ┌─>│ Scraper: Testo   │──┐
+              │  └──────────────────┘  │
+┌────────┐    │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │───┼─>│ Scraper: Link    │──┼─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
+│  URL   │    │  └──────────────────┘  │  └────────────┘  │ Analista │  └────────┘
+└────────┘    │  ┌──────────────────┐  │
+              └─>│ Scraper: Tabelle │──┘
+                 └──────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: URL della pagina da analizzare',
+                '3 nodi Web Scraper in parallelo: extract_text, extract_links, extract_tables',
+                'Aggregator unisce i 3 risultati',
+                'Sonnet analizza tutto e produce un report strutturato',
+              ]} />
+              <Tip>Usa il Web Scraper per pagine pubbliche. Per API protette da autenticazione, usa HTTP Request con header Authorization.</Tip>
+            </Card>
+
+            {/* Tutorial 19 */}
+            <Card title="Tutorial 19 — HTTP API Chain" subtitle="Chiama API, parsa JSON, analizza con AI" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─>│ HTTP GET   │─>│ JSON Parse │─>│  Sonnet  │─>│ OUTPUT │
+│API URL │  │  (retry:2) │  │  flatten   │  │ Analista │  │ Report │
+└────────┘  └────────────┘  └────────────┘  └──────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: URL dell\'API (es. https://api.example.com/data)',
+                'HTTP Request (GET) chiama l\'API con retry automatico',
+                'JSON Parser appiattisce la risposta in tabella leggibile',
+                'Sonnet analizza i dati e scrive un report',
+              ]} />
+              <Prompt label="Config HTTP Request:">{`method: GET
+urlTemplate: {input}
+retryCount: 2
+retryDelay: 3`}</Prompt>
+              <Prompt label="Config JSON Parser:">{`operation: flatten`}</Prompt>
+              <Tip>Aggiungi authType: "bearer" e authToken per API autenticate. Usa urlTemplate con {'{'}{'{'}input{'}'}{'{}'} per URL dinamici.</Tip>
+            </Card>
+
+            {/* Tutorial 20 */}
+            <Card title="Tutorial 20 — Text Transformer" subtitle="Regex, template e manipolazione testo senza AI" icon={BookOpen} accent="blue">
+              <Diagram>{`                 ┌───────────────────┐
+              ┌─>│ Regex: Email      │──┐
+              │  └───────────────────┘  │
+┌────────┐    │  ┌───────────────────┐  │  ┌────────────┐  ┌────────┐
+│ INPUT  │───┼─>│ Count: Statistiche│──┼─>│ AGGREGATOR │─>│ OUTPUT │
+│ Testo  │    │  └───────────────────┘  │  └────────────┘  └────────┘
+└────────┘    │  ┌───────────────────┐  │
+              └─>│ Template: Report  │──┘
+                 └───────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: testo con dati (nomi, email, numeri)',
+                'regex_extract: trova tutti gli indirizzi email con pattern',
+                'count: calcola parole, caratteri, righe',
+                'template: formatta il tutto in un report strutturato',
+              ]} />
+              <Prompt label="Pattern regex per email:">{`[\\w.+-]+@[\\w-]+\\.[\\w.]+`}</Prompt>
+              <Tip>Il Text Transformer non usa AI — e istantaneo e gratuito. Ideale per pre-processare dati prima di passarli a un agente.</Tip>
+            </Card>
+
+            {/* Tutorial 21 */}
+            <Card title="Tutorial 21 — Notifiche Multi-Canale" subtitle="Genera report e notifica Slack + salva su file" icon={BookOpen} accent="blue">
+              <Diagram>{`                                ┌────────────────┐
+                             ┌─>│ Notifier:      │──┐
+                             │  │ Slack/Webhook   │  │
+┌────────┐  ┌──────────┐    │  └────────────────┘  │  ┌────────────┐  ┌────────┐
+│ INPUT  │─>│  Haiku   │───┼                       ├─>│ AGGREGATOR │─>│ OUTPUT │
+│Argomento│  │  Report  │    │  ┌────────────────┐  │  └────────────┘  └────────┘
+└────────┘  └──────────┘    └─>│ File Manager:  │──┘
+                                │ Salva .md      │
+                                └────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: argomento del report',
+                'Haiku genera un breve report (con setVariable per salvarlo)',
+                'In parallelo: Notifier invia a Slack/webhook + File Manager salva su disco',
+                'Aggregator raccoglie i risultati delle due operazioni',
+              ]} />
+              <Tip>Il Notifier supporta anche Discord (embed) e Telegram (bot API). Configura webhookUrl nel pannello del nodo.</Tip>
+            </Card>
+
+            {/* Tutorial 22 */}
+            <Card title="Tutorial 22 — Delay + Rate Limiting" subtitle="Pattern Delay — pausa tra chiamate API per rispettare i limiti" icon={Clock} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─>│ HTTP GET │─>│ DELAY   │─>│ HTTP GET │─>│ DELAY   │─>│  Sonnet  │─>│ OUTPUT │
+│ API 1  │  │ Endpoint1│  │   3s    │  │ Endpoint2│  │   3s    │  │ Confronta│  │ Report │
+└────────┘  └──────────┘  └─────────┘  └──────────┘  └─────────┘  └──────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: base URL dell\'API',
+                'HTTP GET chiama il primo endpoint',
+                'Delay 3 secondi — rispetta il rate limit dell\'API',
+                'HTTP GET chiama il secondo endpoint',
+                'Delay 3 secondi',
+                'Sonnet confronta e analizza i due risultati',
+              ]} />
+              <Prompt label="Config Delay:">{`delaySeconds: 3`}</Prompt>
+              <Tip>Il nodo Delay passa l'input invariato all'output. Usalo tra chiamate API per evitare errori 429 (Too Many Requests).</Tip>
+            </Card>
+
+            {/* Tutorial 23 */}
+            <Card title="Tutorial 23 — Switch: Routing Intelligente" subtitle="Pattern Switch — indirizza input a specialisti diversi" icon={GitFork} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ Sonnet: Tecnico  │──┐
+           │  └──────────────────┘  │
+┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌────────┐
+│ INPUT  │─┤─>│ Haiku: Commerc.  │──┼─>│ AGGREGATOR │─>│ OUTPUT │
+│Domanda │ │  └──────────────────┘  │  └────────────┘  └────────┘
+└────────┘ │  ┌──────────────────┐  │
+           └─>│ GPT-4o: Creativo │──┘
+              └──────────────────┘
+
+              ▲ SWITCH (keyword) ▲
+    "codice"=Tecnico  "vendita"=Commerciale  default=Creativo`}</Diagram>
+              <Steps items={[
+                'Input: domanda dell\'utente (testo libero)',
+                'Switch (keyword): analizza parole chiave nell\'input',
+                'Se contiene "codice", "bug", "API" → Sonnet Tecnico',
+                'Se contiene "vendita", "prezzo", "cliente" → Haiku Commerciale',
+                'Default → GPT-4o Creativo (per tutto il resto)',
+              ]} />
+              <Prompt label="Config Switch:">{`switchType: keyword
+Collega 3 edge con label:
+- "codice" → nodo Tecnico
+- "vendita" → nodo Commerciale
+- "default" → nodo Creativo`}</Prompt>
+              <Tip>Lo Switch e piu potente del Condition: supporta N uscite (non solo true/false). Usa "regex" per pattern complessi o "score" per valutazioni numeriche.</Tip>
+            </Card>
+
+            {/* Tutorial 24 */}
+            <Card title="Tutorial 24 — Switch + Delay Combo" subtitle="Classifica, attendi, poi processa con lo specialista giusto" icon={GitFork} accent="blue">
+              <Diagram>{`                                         ┌─────────┐  ┌──────────────┐
+                                      ┌─>│ DELAY 2s│─>│Sonnet: Analisi│──┐
+                                      │  └─────────┘  └──────────────┘  │
+┌────────┐  ┌──────────────┐  ┌──────┐│  ┌─────────┐  ┌──────────────┐  │  ┌────────┐
+│ INPUT  │─>│ Haiku:       │─>│SWITCH│┤  │ DELAY 1s│─>│Haiku: Risposta│──┼─>│ OUTPUT │
+│ Ticket │  │ Classificatore│  │      ││  └─────────┘  └──────────────┘  │  └────────┘
+└────────┘  └──────────────┘  └──────┘│  ┌─────────┐  ┌──────────────┐  │
+                                      └─>│ DELAY 5s│─>│Opus: Escalation│─┘
+                                         └─────────┘  └──────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: ticket di supporto',
+                'Haiku classifica il ticket (urgenza: alta/media/bassa)',
+                'Switch (keyword) indirizza per priorita',
+                'Alta: Delay 2s + Sonnet analisi approfondita',
+                'Media: Delay 1s + Haiku risposta rapida',
+                'Bassa: Delay 5s (batch) + Opus escalation review',
+              ]} />
+              <Prompt label="Classificatore (Haiku):">{`Classifica il ticket in: "alta", "media", "bassa" urgenza.
+Rispondi con UNA sola parola.`}</Prompt>
+              <Tip>Combina Switch + Delay per creare code di priorita. Delay diversi simulano SLA differenti per ogni livello.</Tip>
+            </Card>
+
+            {/* Tutorial 25 */}
+            <Card title="Tutorial 25 — Variable Store + File Manager" subtitle="Salva variabili tra nodi e scrivi risultati su file" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────┐
+│ INPUT  │─>│    Sonnet    │─>│    Haiku     │─>│ File Manager │─>│ OUTPUT │
+│  Brief │  │  setVar:     │  │  usa {var:   │  │  write_file  │  │Risultato│
+└────────┘  │  "ricerca"   │  │   ricerca}   │  │  output.md   │  └────────┘
+            └──────────────┘  └──────────────┘  └──────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: brief del progetto',
+                'Sonnet fa ricerca e salva output come variabile "ricerca" (setVariable)',
+                'Haiku legge la variabile {var:ricerca} nel suo prompt e produce un sommario',
+                'File Manager scrive il risultato finale su disco',
+              ]} />
+              <Prompt label="Config Sonnet:">{`setVariable: ricerca`}</Prompt>
+              <Prompt label="System Prompt Haiku:">{`Usa i dati di ricerca seguenti per creare un sommario esecutivo:
+{var:ricerca}`}</Prompt>
+              <Tip>Le variabili {'{'}var:nome{'}'} funzionano in qualsiasi campo testo dei nodi successivi. Usale per passare dati specifici senza concatenare tutto l'output.</Tip>
+            </Card>
+
+            {/* Tutorial 26 */}
+            <Card title="Tutorial 26 — Delay: Rate Limiting API" subtitle="Pausa tra chiamate HTTP per rispettare i limiti" icon={Clock} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─>│ HTTP GET │─>│ DELAY   │─>│ HTTP GET │─>│ DELAY   │─>│  Haiku   │─>│ OUTPUT │
+│API URL │  │ /get     │  │   3s    │  │ /headers │  │   2s    │  │ Confronta│  │ Report │
+└────────┘  └──────────┘  └─────────┘  └──────────┘  └─────────┘  └──────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: base URL (es. https://httpbin.org)',
+                'HTTP GET chiama il primo endpoint con retry automatico',
+                'Delay 3s — rispetta il rate limit',
+                'HTTP GET chiama il secondo endpoint',
+                'Delay 2s — altra pausa',
+                'Haiku confronta e analizza le due risposte',
+              ]} />
+              <Tip>Il nodo Delay passa l'input invariato. Usalo tra API per evitare 429 (Too Many Requests). Configura delaySeconds nel pannello.</Tip>
+            </Card>
+
+            {/* Tutorial 27 */}
+            <Card title="Tutorial 27 — Switch: Routing Intelligente" subtitle="Indirizza input a specialisti diversi per keyword" icon={GitFork} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ Sonnet: Tecnico  │──┐      edge label: "bug"
+           │  └──────────────────┘  │
+┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌────────┐
+│ INPUT  │─┤─>│ Haiku: Commerc.  │──┼─>│ AGGREGATOR │─>│ OUTPUT │
+│Domanda │ │  └──────────────────┘  │  └────────────┘  └────────┘
+└────────┘ │  ┌──────────────────┐  │      edge label: "prezzo"
+     │     └─>│ Haiku: Generale  │──┘
+  SWITCH      └──────────────────┘
+ (keyword)        edge label: "default"`}</Diagram>
+              <Steps items={[
+                'Input: domanda dell\'utente (testo libero)',
+                'Switch (keyword): cerca parole chiave nell\'input',
+                'Edge "bug" → Sonnet esperto tecnico se contiene "bug", "codice", "errore"',
+                'Edge "prezzo" → Haiku commerciale se contiene "prezzo", "costo"',
+                'Edge "default" → Haiku generale per tutto il resto',
+                'Solo il branch che matcha viene eseguito, gli altri sono skippati',
+              ]} />
+              <Tip>Le label degli edge devono corrispondere alle keyword cercate dallo Switch. Usa "default" come catch-all. Supporta anche regex e score.</Tip>
+            </Card>
+
+            {/* Tutorial 28 */}
+            <Card title="Tutorial 28 — Switch + Delay: Ticket con SLA" subtitle="Classifica urgenza, assegna delay diversi per priorità" icon={GitFork} accent="blue">
+              <Diagram>{`                                              ┌───────────────────┐
+                                           ┌─>│ Sonnet: Emergenza │──┐   "critico"
+                                           │  └───────────────────┘  │
+┌────────┐  ┌──────────────┐  ┌──────────┐│  ┌─────┐ ┌───────────┐  │  ┌─────┐  ┌────────┐
+│ INPUT  │─>│ Haiku:       │─>│  SWITCH  │┤  │DEL 2│>│Haiku:Alta │  ├─>│ AGG │─>│ OUTPUT │
+│ Ticket │  │ Classificato │  │ (keyword)││  └─────┘ └───────────┘  │  └─────┘  └────────┘
+└────────┘  └──────────────┘  └──────────┘│  ┌─────┐ ┌───────────┐  │   "alto"
+                                           └─>│DEL 5│>│Haiku:Norm.│──┘
+                                              └─────┘ └───────────┘   "default"`}</Diagram>
+              <Steps items={[
+                'Input: ticket di supporto con descrizione del problema',
+                'Haiku classifica in: "critico", "alto", o "normale"',
+                'Switch indirizza per parola chiave classificata',
+                'Critico: risposta immediata da Sonnet (nessun delay)',
+                'Alto: Delay 2s + Haiku risposta dettagliata',
+                'Normale: Delay 5s + Haiku risposta standard',
+              ]} />
+              <Tip>Combina Switch + Delay per simulare code di priorità con SLA differenti. I Delay rappresentano i tempi di attesa per priorità.</Tip>
+            </Card>
+
+            {/* Tutorial 29 */}
+            <Card title="Tutorial 29 — Triple Pipeline: AI SaaS Report" subtitle="3 input paralleli → incrocio → validazione → executive report" icon={Rocket} accent="blue">
+              <Diagram>{`┌──────────┐  ┌──────────┐  ┌──────────┐
+│ Mercato  │  │  Tech    │  │ Business │   3 INPUT PARALLELI
+└────┬─────┘  └────┬─────┘  └────┬─────┘
+     │             │             │
+┌────▼─────┐  ┌────▼─────┐  ┌────▼─────┐
+│ Analista │  │Architetto│  │Strategist│   3 AGENTI SPECIALISTI
+│ Mercato  │  │ Software │  │ Business │   (con setVariable)
+└────┬─────┘  └────┬─────┘  └────┬─────┘
+     └─────────────┼─────────────┘
+              ┌────▼─────┐
+              │ AGGREGAT │  INCROCIO ANALISI
+              └────┬─────┘
+        ┌──────────┼──────────┐
+   ┌────▼────┐┌────▼────┐┌────▼────┐
+   │Validatore││  Risk   ││  KPI   │   VALIDAZIONE INCROCIATA
+   │Coerenza ││Analyzer ││ Synth  │
+   └────┬────┘└────┬────┘└────┬────┘
+        └──────────┼──────────┘
+              ┌────▼─────┐
+              │ DELAY 2s │  PAUSA REVIEW
+              └────┬─────┘
+              ┌────▼─────┐
+              │ AGGREGAT │+ output originali
+              └────┬─────┘
+              ┌────▼─────┐
+              │  Sonnet  │  EXECUTIVE REPORT WRITER
+              │ C-Level  │  (con fallback gpt-4o)
+              └────┬─────┘
+         ┌─────────┼─────────┐
+    ┌────▼────┐         ┌────▼────┐
+    │  SAVE   │         │ OUTPUT  │
+    │  .md    │         │ Report  │
+    └─────────┘         └─────────┘`}</Diagram>
+              <Steps items={[
+                '3 Input paralleli: dati mercato, stack tecnico, obiettivi business',
+                '3 Agenti specialisti analizzano in parallelo (setVariable per salvare)',
+                'Aggregator incrocia le 3 analisi',
+                '3 Agenti di validazione in parallelo: coerenza, rischi, KPI',
+                'Delay 2s per review',
+                'Aggregator finale assembla tutto (analisi + validazioni)',
+                'Sonnet C-level scrive l\'executive report (con fallback su GPT-4o)',
+                'Output doppio: salva su file + mostra a schermo',
+              ]} />
+              <Tip>Questo workflow usa: 3 input paralleli, 6 agenti, aggregation multipla, setVariable per condivisione dati, delay, model fallback, retry, e file save. E il pattern piu complesso disponibile.</Tip>
+            </Card>
+            {/* Tutorial 30 */}
+            <Card title="Tutorial 30 — Telegram Bot: Report Automatico" subtitle="Genera report con AI e invia su Telegram" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌──────────────────┐  ┌────────┐
+│ INPUT  │─>│  Sonnet  │─>│  Telegram Bot    │─>│ OUTPUT │
+│ Topic  │  │  Report  │  │  send_message    │  │Conferma│
+└────────┘  └──────────┘  └──────────────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: argomento del report',
+                'Sonnet genera un report in Markdown',
+                'Telegram Bot invia il report al canale/chat configurato',
+                'Output conferma l\'invio',
+              ]} />
+              <MiniTable
+                headers={['Operazione', 'Descrizione']}
+                rows={[
+                  ['send_message', 'Invia messaggio testuale (Markdown/HTML)'],
+                  ['send_document', 'Invia file (PDF, CSV, ZIP...)'],
+                  ['send_photo', 'Invia foto (path locale o URL)'],
+                  ['get_updates', 'Leggi gli ultimi messaggi ricevuti'],
+                  ['get_chat_info', 'Info su una chat/gruppo/canale'],
+                ]}
+              />
+              <Prompt label="Config Telegram Bot:">{`operation: send_message
+botToken: (da .env TELEGRAM_BOT_TOKEN)
+chatId: -100123456789
+parseMode: Markdown`}</Prompt>
+              <Tip>Crea il bot con @BotFather su Telegram. Il chat_id lo trovi inviando un messaggio al bot e chiamando get_updates.</Tip>
+            </Card>
+
+            {/* Tutorial 31 */}
+            <Card title="Tutorial 31 — WhatsApp: Notifica Clienti" subtitle="Genera contenuto e invia via WhatsApp Business" icon={BookOpen} accent="blue">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌──────────────────┐  ┌────────┐
+│ INPUT  │─>│  Haiku   │─>│    WhatsApp      │─>│ OUTPUT │
+│ Evento │  │ Messaggio│  │  send_message    │  │Conferma│
+└────────┘  └──────────┘  └──────────────────┘  └────────┘`}</Diagram>
+              <Steps items={[
+                'Input: descrizione dell\'evento/notifica',
+                'Haiku genera un messaggio breve e professionale',
+                'WhatsApp invia al numero del cliente',
+                'Output conferma l\'invio con message ID',
+              ]} />
+              <MiniTable
+                headers={['Operazione', 'Descrizione']}
+                rows={[
+                  ['send_message', 'Invia messaggio di testo (max 4096 chars)'],
+                  ['send_template', 'Invia template pre-approvato da Meta'],
+                  ['send_document', 'Invia documento via URL pubblico'],
+                  ['send_image', 'Invia immagine via URL pubblico'],
+                ]}
+              />
+              <Prompt label="Config WhatsApp:">{`operation: send_message
+recipient: 39xxxxxxxxxx (con prefisso internazionale)
+Credenziali: WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID nel .env`}</Prompt>
+              <Tip>Per usare WhatsApp Business API serve un account Meta Business verificato. I template devono essere pre-approvati da Meta prima dell'invio.</Tip>
+            </Card>
+
+            {/* Tutorial 32 */}
+            <Card title="Tutorial 32 — PyArchInit: Analisi Stratigrafica" subtitle="Query database archeologico + analisi AI" icon={BookOpen} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ PyArchInit:      │──┐
+           │  │ query_us         │  │
+┌────────┐ │  └──────────────────┘  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─┤                        ├─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
+│  Sito  │ │  ┌──────────────────┐  │  └────────────┘  │ Analisi  │  │ Report │
+└────────┘ └─>│ PyArchInit:      │──┘                  └──────────┘  └────────┘
+              │ query_inventory  │
+              └──────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: nome del sito (es. "Pompeii")',
+                'Due query in parallelo: US (stratigrafia) e Inventario materiali',
+                'Aggregator unisce i risultati',
+                'Sonnet analizza i dati e produce un report stratigrafico',
+              ]} />
+              <MiniTable
+                headers={['Operazione', 'Descrizione']}
+                rows={[
+                  ['query_us', 'Unita Stratigrafiche'],
+                  ['query_inventory', 'Inventario Materiali'],
+                  ['query_pottery', 'Ceramica'],
+                  ['query_sites', 'Siti'],
+                  ['query_structures', 'Strutture'],
+                  ['query_tombs', 'Tombe'],
+                  ['query_samples', 'Campioni'],
+                  ['custom_query', 'Query SQL personalizzata (solo SELECT)'],
+                  ['list_tables', 'Lista tutte le tabelle del DB'],
+                  ['export_csv', 'Esporta risultati in formato CSV'],
+                ]}
+              />
+              <Prompt label="Config PyArchInit:">{`operation: query_us
+dbPath: ~/.pyarchinit/pyarchinit_DB_folder/pyarchinit_db.sqlite
+dbType: sqlite
+sito: Pompeii (filtro opzionale)
+area: A (filtro opzionale)`}</Prompt>
+              <Prompt label="Sonnet — Analisi Stratigrafica:">{`Sei un archeologo esperto. Analizza i dati stratigrafici e l'inventario:
+1. Identifica la sequenza stratigrafica
+2. Correla US e materiali
+3. Proponi una datazione relativa
+4. Segnala anomalie o lacune nei dati`}</Prompt>
+              <Tip>PyArchInit accede direttamente al database SQLite senza richiedere QGIS. Auto-detect del path default ~/.pyarchinit/. Supporta anche PostgreSQL.</Tip>
+            </Card>
+
+            {/* Tutorial 33 */}
+            <Card title="Tutorial 33 — QGIS Project: Analisi Progetto" subtitle="Parsing progetto QGIS senza QGIS installato" icon={BookOpen} accent="blue">
+              <Diagram>{`              ┌──────────────────┐
+           ┌─>│ QGIS: list_layers│──┐
+           │  └──────────────────┘  │
+┌────────┐ │  ┌──────────────────┐  │  ┌────────────┐  ┌──────────┐  ┌────────┐
+│ INPUT  │─┤  │ QGIS: project_   │  ├─>│ AGGREGATOR │─>│  Sonnet  │─>│ OUTPUT │
+│ .qgz   │ ├─>│ info             │──┘  └────────────┘  │ Analisi  │  │ Report │
+└────────┘ │  └──────────────────┘                      └──────────┘  └────────┘
+           │  ┌──────────────────┐
+           └─>│ QGIS: read_style │──────────────────────────────────────>│
+              └──────────────────┘`}</Diagram>
+              <Steps items={[
+                'Input: percorso del file .qgs o .qgz',
+                'list_layers: elenca tutti i layer con tipo, geometria, sorgente',
+                'project_info: metadati (CRS, versione QGIS, estensione, conteggio layer)',
+                'read_style: dettagli su renderer e simbologia di ogni layer',
+                'Sonnet analizza la struttura del progetto e suggerisce miglioramenti',
+              ]} />
+              <MiniTable
+                headers={['Operazione', 'Descrizione']}
+                rows={[
+                  ['list_layers', 'Lista tutti i layer con tipo, geometria, sorgente dati'],
+                  ['project_info', 'Metadati: CRS, versione QGIS, estensione, n. layer'],
+                  ['list_plugins', 'Plugin e provider custom usati nel progetto'],
+                  ['read_style', 'Renderer, simboli, proprietà di stile per layer'],
+                ]}
+              />
+              <Prompt label="Config QGIS Project:">{`operation: list_layers
+projectPath: /path/to/progetto.qgz`}</Prompt>
+              <Prompt label="Sonnet — Analisi Progetto GIS:">{`Analizza la struttura del progetto QGIS:
+1. Identifica i layer principali e il loro ruolo
+2. Valuta il sistema di riferimento (CRS)
+3. Suggerisci ottimizzazioni (layer ridondanti, stili migliorabili)
+4. Verifica la coerenza delle sorgenti dati`}</Prompt>
+              <Tip>Il parsing avviene via XML/ZIP senza alcuna dipendenza QGIS. Supporta sia .qgs (XML puro) che .qgz (archivio compresso). Ideale per audit automatici di progetti GIS.</Tip>
+            </Card>
+
+            {/* Tutorial 34 */}
+            <Card title="Tutorial 34 — Validator: Quality Gate AI" subtitle="Pattern Validator — genera, valida con AI, correggi se fallisce" icon={ShieldCheck} accent="emerald">
+              <Diagram>{`┌────────┐  ┌──────────┐  ┌─────────────┐  pass  ┌──────────┐
+│ INPUT  │─>│  Sonnet  │─>│  VALIDATOR   │──────>│  OUTPUT  │
+│  Brief │  │ Scrittore│  │ Quality Gate │       │Approvato │
+└────────┘  └──────────┘  └──────┬──────┘       └──────────┘
+                                 │ fail
+                           ┌─────▼──────┐  ┌─────────────┐  ┌──────────┐
+                           │   Sonnet   │─>│  VALIDATOR   │─>│  OUTPUT  │
+                           │ Correttore │  │ Re-Validazione│  │ Corretto │
+                           └────────────┘  └─────────────┘  └──────────┘`}</Diagram>
+              <Steps items={[
+                'Input: brief del contenuto da generare',
+                'Sonnet Scrittore genera il contenuto (articolo, email, codice...)',
+                'Validator analizza con AI: il contenuto soddisfa i criteri?',
+                'Se PASS (score >= strictness): output diretto — contenuto approvato',
+                'Se FAIL: il Correttore riscrive usando il feedback di validazione',
+                'Secondo Validator (opzionale) ri-verifica la correzione',
+              ]} />
+              <MiniTable
+                headers={['Parametro', 'Descrizione', 'Default']}
+                rows={[
+                  ['Model', 'Modello AI per la validazione', 'Haiku (veloce)'],
+                  ['Validation Prompt', 'Criteri di validazione (testo libero)', '(vuoto)'],
+                  ['Strictness', 'Soglia 1-10 (10 = severissimo)', '7'],
+                  ['Include Context', 'Mostra al validatore i nodi del workflow', 'No'],
+                ]}
+              />
+              <Prompt label="Criteri di validazione esempio:">{`Verifica che il testo:
+1. Sia in italiano corretto senza errori grammaticali
+2. Abbia almeno 300 parole
+3. Contenga titolo, introduzione e conclusione
+4. Sia coerente e ben argomentato
+5. Non contenga informazioni palesemente false`}</Prompt>
+              <Prompt label="Risposta del Validator (JSON automatico):">{`{"valid": true, "reason": "Articolo completo e ben strutturato", "score": 8}
+oppure
+{"valid": false, "reason": "Manca la conclusione, solo 150 parole", "score": 4}`}</Prompt>
+              <Tip>
+                Il Validator usa Haiku di default per velocita e costo. L'output passa al branch successivo con il report di validazione appeso.
+                I branch "pass" e "fail" funzionano come i nodi Condition — collega gli edge con label <strong>"pass"</strong> e <strong>"fail"</strong>.
+              </Tip>
+              <div className="space-y-2">
+                <span className="text-xs font-medium text-emerald-400">Casi d'uso tipici:</span>
+                <ul className="text-sm text-gray-300 space-y-1">
+                  <li>- Verificare qualita di articoli, email, traduzioni</li>
+                  <li>- Validare formato JSON/XML prima di invio API</li>
+                  <li>- Controllare che codice generato compili / segua convenzioni</li>
+                  <li>- Gate di approvazione prima di invio Telegram/WhatsApp/Email</li>
+                  <li>- Filtrare output indesiderati (off-topic, contenuto inappropriato)</li>
+                </ul>
+              </div>
+            </Card>
           </div>
         </div>
 
@@ -556,7 +1060,19 @@ Validate + Retry:       Genera -> Valida formato -> Loop se invalido
 Quality Gate:           Genera -> Score qualita -> Rigenera se < soglia
 Chunker + Sintesi:      Splitta doc -> Analizza chunk -> Sintesi finale
 Meta-Agent + Pipeline:  Orchestratore -> Sub-workflow -> Editor finale
-GIS + Report:           Analisi vettori/raster -> Mappa -> Report AI`}</Diagram>
+GIS + Report:           Analisi vettori/raster -> Mappa -> Report AI
+Switch + Specialists:   Classifica -> N esperti diversi per tipo
+Delay + API Chain:      HTTP GET -> Delay 3s -> HTTP GET -> Analisi
+Scraper + Analisi:      Scraping web -> Text Transform -> AI Report
+API + JSON + Report:    HTTP Request -> JSON Parser -> AI Analista
+Notifier + File:        AI Report -> [Slack + File Manager] parallelo
+Variables + Template:   setVariable -> {var:nome} in nodi successivi
+Telegram Bot + AI:      AI genera -> Telegram invia a chat/canale
+WhatsApp + Template:    Evento -> AI messaggio -> WhatsApp al cliente
+PyArchInit + AI:        Query US/materiali -> AI analisi stratigrafica
+QGIS Project + Report:  Parsing .qgz -> AI audit progetto GIS
+Validator + Correttore: Genera -> Validator pass/fail -> Correggi se fail
+Validator + Loop:       Genera -> Valida -> Fail: correggi -> Re-valida`}</Diagram>
             </Card>
 
             <Card title="Errori Comuni da Evitare" icon={AlertTriangle} accent="red">
@@ -583,10 +1099,16 @@ GIS + Report:           Analisi vettori/raster -> Mappa -> Report AI`}</Diagram>
                 ['API Key not found', 'Controlla .env nella root del progetto'],
                 ['Nodo non si collega', 'Trascina dal pallino output al pallino input'],
                 ['Risposta vuota', 'Verifica che il system prompt non sia vuoto'],
-                ['Timeout', 'Aumenta il timeout nelle impostazioni del nodo'],
+                ['Timeout', 'Aumenta il timeout nelle impostazioni del nodo o il timeout globale'],
                 ['Errore 404 modello', "Verifica l'ID del modello nelle impostazioni"],
                 ['Loop infinito', 'Aggiungi condizione di uscita o max iterazioni'],
                 ['Costo alto', 'Sostituisci Opus/Sonnet con Haiku per task semplici'],
+                ['Tool not found', 'Riavvia il backend — i tool sono caricati al primo avvio'],
+                ['HTTP 429 Too Many Requests', 'Aggiungi nodi Delay tra le chiamate API'],
+                ['Modello AI down', 'Configura fallbackModel nel nodo agent (es. gpt-4o come backup)'],
+                ['File Manager path error', 'Usa il campo "destination" per il path, non l\'input'],
+                ['Switch non instrada', 'Verifica che le label degli edge corrispondano ai case dello Switch'],
+                ['Validator sempre pass/fail', 'Rendi il Validation Prompt piu specifico e regola Strictness (1-10)'],
               ]}
             />
           </Card>

@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import csv as csv_mod
 import io
+import json
+import os
 import re
 import uuid
 import zipfile
@@ -222,7 +224,7 @@ async def _smart_format(content: str, target_format: str) -> str:
 @router.post("/workflows/{workflow_id}/export")
 async def export_workflow(
     workflow_id: str,
-    format: str = Query("zip", pattern="^(zip|markdown|pdf|docx|csv|xlsx|png)$"),
+    format: str = Query("zip", pattern="^(zip|zip_all|markdown|pdf|docx|csv|xlsx|png|geojson|shapefile)$"),
     smart_format: bool = Query(False),
     db: AsyncSession = Depends(get_db),
 ):
@@ -522,6 +524,155 @@ async def export_workflow(
             )
         except ImportError:
             raise HTTPException(500, "PyMuPDF (fitz) not installed. Run: pip install PyMuPDF")
+
+    # ── GeoJSON ─────────────────────────────────────────────
+    if format == "geojson":
+        import re as _re
+        geojson_pattern = _re.compile(r'\{"type"\s*:\s*"FeatureCollection"[\s\S]*?\}(?:\s*\]?\s*\})')
+        features = []
+        for content in results.values():
+            # Try to find GeoJSON in artifact blocks
+            artifact_re = _re.compile(r'```artifact\s*\n([\s\S]*?)```')
+            for match in artifact_re.finditer(str(content)):
+                try:
+                    obj = json.loads(match.group(1).strip())
+                    if obj.get("type") == "geojson" and obj.get("data"):
+                        data = obj["data"] if isinstance(obj["data"], dict) else json.loads(obj["data"])
+                        if data.get("type") == "FeatureCollection":
+                            features.extend(data.get("features", []))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            # Also try raw GeoJSON in content
+            for match in geojson_pattern.finditer(str(content)):
+                try:
+                    data = json.loads(match.group())
+                    if data.get("type") == "FeatureCollection":
+                        features.extend(data.get("features", []))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        if not features:
+            # Fallback: wrap text results as GeoJSON with no geometry
+            raise HTTPException(404, "No GeoJSON/spatial data found in workflow results")
+
+        fc = {"type": "FeatureCollection", "features": features}
+        geojson_bytes = json.dumps(fc, ensure_ascii=False, indent=2).encode("utf-8")
+        return StreamingResponse(
+            io.BytesIO(geojson_bytes),
+            media_type="application/geo+json",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}.geojson"'},
+        )
+
+    # ── Shapefile (as ZIP) ─────────────────────────────────
+    if format == "shapefile":
+        try:
+            import geopandas as gpd
+            from shapely.geometry import shape
+        except ImportError:
+            raise HTTPException(500, "geopandas/shapely not installed")
+
+        import re as _re
+        features = []
+        artifact_re = _re.compile(r'```artifact\s*\n([\s\S]*?)```')
+        for content in results.values():
+            for match in artifact_re.finditer(str(content)):
+                try:
+                    obj = json.loads(match.group(1).strip())
+                    if obj.get("type") == "geojson" and obj.get("data"):
+                        data = obj["data"] if isinstance(obj["data"], dict) else json.loads(obj["data"])
+                        if data.get("type") == "FeatureCollection":
+                            features.extend(data.get("features", []))
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        if not features:
+            raise HTTPException(404, "No spatial data found in workflow results for shapefile export")
+
+        gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shp_path = os.path.join(tmpdir, f"{wf.name}.shp")
+            gdf.to_file(shp_path)
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                for f in os.listdir(tmpdir):
+                    zf.write(os.path.join(tmpdir, f), f)
+            buf.seek(0)
+
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}_shp.zip"'},
+        )
+
+    # ── ZIP All (every format bundled) ─────────────────────
+    if format == "zip_all":
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            # Markdown files per node
+            for i, (nid, content) in enumerate(results.items(), 1):
+                label = node_labels.get(nid, nid).replace(" ", "_")
+                zf.writestr(f"markdown/{i:02d}_{label}.md", str(content))
+
+            # Combined markdown
+            md_lines = [f"# {wf.name} — Risultati\n"]
+            for nid, content in results.items():
+                label = node_labels.get(nid, nid)
+                md_lines.append(f"## {label}\n\n{content}\n")
+            zf.writestr(f"{wf.name}.md", "\n".join(md_lines))
+
+            # CSV
+            csv_buf = io.StringIO()
+            csv_buf.write("\ufeff")  # BOM
+            import csv as csv_mod
+            writer = csv_mod.writer(csv_buf)
+            writer.writerow(["Node", "Content"])
+            for nid, content in results.items():
+                label = node_labels.get(nid, nid)
+                writer.writerow([label, str(content)[:32000]])
+            zf.writestr(f"{wf.name}.csv", csv_buf.getvalue())
+
+            # PDF
+            try:
+                from fpdf import FPDF
+                pdf = FPDF()
+                pdf.set_auto_page_break(auto=True, margin=15)
+                for nid, content in results.items():
+                    label = node_labels.get(nid, nid)
+                    pdf.add_page()
+                    pdf.set_font("Helvetica", "B", 14)
+                    pdf.cell(0, 10, label, new_x="LMARGIN", new_y="NEXT")
+                    pdf.set_font("Helvetica", size=9)
+                    text = _md_to_plain(str(content))
+                    pdf.multi_cell(0, 5, text)
+                zf.writestr(f"{wf.name}.pdf", pdf.output())
+            except ImportError:
+                pass
+
+            # GeoJSON (if spatial data present)
+            import re as _re
+            features = []
+            artifact_re = _re.compile(r'```artifact\s*\n([\s\S]*?)```')
+            for content in results.values():
+                for match in artifact_re.finditer(str(content)):
+                    try:
+                        obj = json.loads(match.group(1).strip())
+                        if obj.get("type") == "geojson" and obj.get("data"):
+                            data = obj["data"] if isinstance(obj["data"], dict) else json.loads(obj["data"])
+                            if data.get("type") == "FeatureCollection":
+                                features.extend(data.get("features", []))
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+            if features:
+                fc = {"type": "FeatureCollection", "features": features}
+                zf.writestr(f"{wf.name}.geojson", json.dumps(fc, ensure_ascii=False, indent=2))
+
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{wf.name}_all.zip"'},
+        )
 
     # ── ZIP (default) ─────────────────────────────────────
     buf = io.BytesIO()

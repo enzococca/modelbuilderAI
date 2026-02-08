@@ -51,7 +51,7 @@ export interface Project {
 }
 
 // Workflow types
-export type NodeType = 'agent' | 'tool' | 'condition' | 'input' | 'output' | 'loop' | 'aggregator' | 'meta_agent' | 'chunker';
+export type NodeType = 'agent' | 'tool' | 'condition' | 'input' | 'output' | 'loop' | 'aggregator' | 'meta_agent' | 'chunker' | 'delay' | 'switch' | 'validator';
 
 export interface WorkflowNode {
   id: string;

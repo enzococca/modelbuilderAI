@@ -54,19 +54,31 @@ export function AnalyticsDashboard() {
   const [daily, setDaily] = useState<DailyUsage[]>([]);
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = (period: number) => {
     setLoading(true);
-    Promise.all([getUsageSummary(days), getDailyUsage(days)])
+    setError(null);
+    Promise.all([getUsageSummary(period), getDailyUsage(period)])
       .then(([s, d]) => {
         setSummary(s);
         setDaily(d);
       })
-      .catch(() => {
+      .catch((err) => {
         setSummary(null);
         setDaily([]);
+        const msg = err?.code === 'ECONNABORTED'
+          ? 'Timeout: il backend non risponde. Verifica che il server sia avviato.'
+          : err?.response?.status === 500
+            ? 'Errore interno del server. Riprova tra qualche secondo.'
+            : 'Impossibile caricare i dati analytics. Il backend potrebbe essere ancora in avvio.';
+        setError(msg);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData(days);
   }, [days]);
 
   const maxTokens = Math.max(...daily.map((d) => d.total_tokens), 1);
@@ -96,6 +108,16 @@ export function AnalyticsDashboard() {
 
         {loading ? (
           <div className="text-gray-400 text-center py-12">Loading analytics...</div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={() => fetchData(days)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-medium transition-colors"
+            >
+              Riprova
+            </button>
+          </div>
         ) : !summary ? (
           <div className="text-gray-500 text-center py-12">No usage data yet. Start chatting to see analytics.</div>
         ) : (

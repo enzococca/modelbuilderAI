@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Analisi Ceramica Al-Khutm",
+        "inputType": "text",
+        "defaultValue": "Classifica la ceramica del sito Al-Khutm dal database ktm24"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Query Pottery",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/ktm24.sqlite",
+        "queryTemplate": "SELECT sito, area, us, fabric, material, form, specific_form, ware, munsell, surf_trat, exdeco, intdeco, wheel_made, diametro_max, qty, diametro_rim, specific_shape, sector FROM pottery_table WHERE sito='Al-Khutm' LIMIT 80"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 100, "y": 370 },
+      "data": {
+        "label": "Conta Fabric",
+        "tool": "text_transformer",
+        "operation": "regex_extract",
+        "pattern": "(?:Medium coarse|Medium fine|Fine|Coarse)[^|]*"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 600, "y": 370 },
+      "data": {
+        "label": "Statistiche Righe",
+        "tool": "text_transformer",
+        "operation": "count"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 540 },
+      "data": {
+        "label": "Raccogli Dati",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 350, "y": 700 },
+      "data": {
+        "label": "Ceramologo",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo ceramologo. Ricevi dati REALI dal database PyArchInit del sito Al-Khutm (Oman).\n\nI campi della pottery_table sono: sito, area, US, fabric (impasto), material, form (forma), specific_form, ware (classe), munsell (colore), surf_trat (trattamento superficiale), exdeco/intdeco (decorazione), wheel_made (tornio), diametro_max, qty, diametro_rim, specific_shape, sector.\n\nProduci un report che includa:\n1. **Catalogo tipologico**: classifica per fabric (Medium coarse ware, Medium fine ware, Fine ware, Coarse ware), forma e ware\n2. **Distribuzione**: tabella con conteggio per tipo di fabric e area di scavo\n3. **Tecniche produttive**: analisi del trattamento superficiale, decorazione, lavorazione al tornio\n4. **Morfologia**: analisi delle forme (Rim, Base, Wall, Close) e specific_shape\n5. **Confronti**: suggerisci paralleli tipologici per ceramica dell'Oman\n\nFormato: report markdown con tabelle. Rispondi in italiano.",
+        "temperature": 0.4,
+        "maxTokens": 3000,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 880 },
+      "data": {
+        "label": "Report Ceramica",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e2-5", "source": "node_2", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

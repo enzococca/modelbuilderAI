@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -133,6 +133,19 @@ class UsageRow(Base):
     estimated_cost = Column(Float, default=0.0)
     duration_ms = Column(Integer, default=0)
     source = Column(String, default="chat")  # chat, workflow, tool
+    created_at = Column(DateTime, default=_now)
+
+
+class ScheduledJobRow(Base):
+    __tablename__ = "scheduled_jobs"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False)
+    cron_expr = Column(String, default="")  # e.g. "*/5 * * * *"
+    interval_seconds = Column(Integer, default=0)  # alternative: every N seconds
+    enabled = Column(Boolean, default=True)
+    input_text = Column(Text, default="")
+    last_run = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=_now)
 
 

@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "URL Pagina Web", "inputType": "url", "defaultValue": "https://en.wikipedia.org/wiki/Artificial_intelligence" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Scraping Pagina", "tool": "web_scraper", "operation": "extract_text", "timeout": 15 }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 370 },
+      "data": { "label": "Analisi Contenuto", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Ricevi il testo estratto da una pagina web. Produci:\n1. Titolo e argomento principale\n2. Riassunto in 5 punti chiave\n3. Parole chiave principali\n4. Eventuali dati o statistiche menzionati", "temperature": 0.5, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 300, "y": 540 },
+      "data": { "label": "Analisi Pagina Web", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

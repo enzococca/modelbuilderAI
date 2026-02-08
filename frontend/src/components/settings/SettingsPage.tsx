@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Server, Key, Check, Loader2, Wifi, WifiOff, HardDrive, Mail } from 'lucide-react';
+import { Settings, Server, Key, Check, Loader2, Wifi, WifiOff, HardDrive, Mail, Send, MessageCircle } from 'lucide-react';
 import { getSettings, updateSettings, getLocalModels } from '@/services/api';
 
 interface SettingsData {
@@ -28,6 +28,14 @@ interface SettingsData {
   imap_username: string;
   imap_password_mask: string;
   imap_use_ssl: boolean;
+  // Resend
+  resend_api_key_mask: string;
+  resend_from: string;
+  // Telegram
+  telegram_bot_token_mask: string;
+  // WhatsApp
+  whatsapp_token_mask: string;
+  whatsapp_phone_number_id: string;
 }
 
 export function SettingsPage() {
@@ -60,6 +68,14 @@ export function SettingsPage() {
   const [imapUsername, setImapUsername] = useState('');
   const [imapPassword, setImapPassword] = useState('');
   const [imapUseSsl, setImapUseSsl] = useState(true);
+  // Resend
+  const [resendApiKey, setResendApiKey] = useState('');
+  const [resendFrom, setResendFrom] = useState('');
+  // Telegram
+  const [telegramBotToken, setTelegramBotToken] = useState('');
+  // WhatsApp
+  const [whatsappToken, setWhatsappToken] = useState('');
+  const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState('');
 
   useEffect(() => {
     getSettings().then((s: SettingsData) => {
@@ -88,6 +104,14 @@ export function SettingsPage() {
       setImapUsername(s.imap_username || '');
       setImapPassword(s.imap_password_mask || '');
       setImapUseSsl(s.imap_use_ssl ?? true);
+      // Resend
+      setResendApiKey(s.resend_api_key_mask || '');
+      setResendFrom(s.resend_from || '');
+      // Telegram
+      setTelegramBotToken(s.telegram_bot_token_mask || '');
+      // WhatsApp
+      setWhatsappToken(s.whatsapp_token_mask || '');
+      setWhatsappPhoneNumberId(s.whatsapp_phone_number_id || '');
     }).catch(() => {});
   }, []);
 
@@ -132,6 +156,14 @@ export function SettingsPage() {
         imap_username: imapUsername,
         imap_password: imapPassword,
         imap_use_ssl: imapUseSsl,
+        // Resend
+        resend_api_key: resendApiKey,
+        resend_from: resendFrom,
+        // Telegram
+        telegram_bot_token: telegramBotToken,
+        // WhatsApp
+        whatsapp_token: whatsappToken,
+        whatsapp_phone_number_id: whatsappPhoneNumberId,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -308,6 +340,91 @@ export function SettingsPage() {
           </label>
 
           <p className="text-[10px] text-gray-600">Outlook usa le stesse credenziali Microsoft (sopra).</p>
+        </div>
+      </section>
+
+      {/* Email Sending (Resend) */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Send className="w-4 h-4 text-orange-400" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Email Sending (Resend)</h2>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Resend API Key</label>
+            <input
+              value={resendApiKey}
+              onChange={e => setResendApiKey(e.target.value)}
+              placeholder="re_..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">From Address</label>
+            <input
+              value={resendFrom}
+              onChange={e => setResendFrom(e.target.value)}
+              placeholder="Gennaro <onboarding@resend.dev>"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <p className="text-[10px] text-gray-600">Resend offre 100 email/giorno gratuite. Registrati su resend.com per ottenere la API key.</p>
+        </div>
+      </section>
+
+      {/* Telegram Bot */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-sky-400" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Telegram Bot</h2>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Bot Token</label>
+            <input
+              value={telegramBotToken}
+              onChange={e => setTelegramBotToken(e.target.value)}
+              placeholder="123456789:ABCdef..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <p className="text-[10px] text-gray-600">
+            Crea un bot con <span className="text-sky-400">@BotFather</span> su Telegram. Il chat_id lo configuri direttamente nei nodi del workflow.
+          </p>
+        </div>
+      </section>
+
+      {/* WhatsApp Business */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-green-400" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">WhatsApp Business</h2>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Access Token</label>
+            <input
+              value={whatsappToken}
+              onChange={e => setWhatsappToken(e.target.value)}
+              placeholder="EAAx..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Phone Number ID</label>
+            <input
+              value={whatsappPhoneNumberId}
+              onChange={e => setWhatsappPhoneNumberId(e.target.value)}
+              placeholder="1234567890"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <p className="text-[10px] text-gray-600">
+            Richiede un account Meta Business verificato. Token e Phone Number ID si trovano nella dashboard di Meta for Developers.
+          </p>
         </div>
       </section>
 

@@ -35,6 +35,16 @@ def _build_registry() -> dict[str, type[BaseTool]]:
     from tools.email_search import EmailSearchTool
     from tools.project_analyzer import ProjectAnalyzerTool
     from tools.email_sender import EmailSenderTool
+    from tools.web_scraper import WebScraperTool
+    from tools.file_manager import FileManagerTool
+    from tools.http_request import HTTPRequestTool
+    from tools.text_transformer import TextTransformerTool
+    from tools.notifier import NotifierTool
+    from tools.json_parser import JSONParserTool
+    from tools.telegram_bot import TelegramBotTool
+    from tools.whatsapp import WhatsAppTool
+    from tools.pyarchinit_tool import PyArchInitTool
+    from tools.qgis_project import QGISProjectTool
     return {
         "web_search": WebSearchTool,
         "code_executor": CodeExecutorTool,
@@ -48,15 +58,33 @@ def _build_registry() -> dict[str, type[BaseTool]]:
         "email_search": EmailSearchTool,
         "project_analyzer": ProjectAnalyzerTool,
         "email_sender": EmailSenderTool,
+        "web_scraper": WebScraperTool,
+        "file_manager": FileManagerTool,
+        "http_request": HTTPRequestTool,
+        "text_transformer": TextTransformerTool,
+        "notifier": NotifierTool,
+        "json_parser": JSONParserTool,
+        "telegram_bot": TelegramBotTool,
+        "whatsapp": WhatsAppTool,
+        "pyarchinit_tool": PyArchInitTool,
+        "qgis_project": QGISProjectTool,
     }
 
 
 def get_tool(name: str) -> BaseTool | None:
-    """Get an instantiated tool by name."""
+    """Get an instantiated tool by name.
+
+    If the tool isn't found in the cached registry, rebuild once to pick up
+    any tools that were added after the server started.
+    """
     global _TOOL_MAP
     if _TOOL_MAP is None:
         _TOOL_MAP = _build_registry()
     cls = _TOOL_MAP.get(name)
+    if cls is None:
+        # Rebuild registry in case new tools were deployed at runtime
+        _TOOL_MAP = _build_registry()
+        cls = _TOOL_MAP.get(name)
     if cls is None:
         return None
     return cls()

@@ -1,0 +1,91 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Dati Ordine",
+        "inputType": "text",
+        "defaultValue": "Ordine #1234 confermato. Cliente: Mario Rossi. Prodotto: Sensore Drone X500. Spedizione: 3-5 giorni lavorativi. Tracking: IT9876543210"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 100, "y": 220 },
+      "data": {
+        "label": "Messaggio Cliente",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Scrivi un messaggio WhatsApp breve e professionale per confermare un ordine al cliente. Includi: numero ordine, prodotto, tempi spedizione, tracking. Tono cordiale ma conciso. Max 150 parole. Non usare markdown, solo testo semplice con emoji appropriate.",
+        "temperature": 0.4,
+        "maxTokens": 512
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 600, "y": 220 },
+      "data": {
+        "label": "Notifica Magazzino",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Scrivi una notifica interna per il magazzino con i dettagli dell'ordine da preparare. Formato schematico:\n- Ordine N.\n- Prodotto\n- Destinatario\n- Priorita spedizione\n- Note\nMax 100 parole. Testo semplice, no markdown.",
+        "temperature": 0.3,
+        "maxTokens": 256
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 100, "y": 440 },
+      "data": {
+        "label": "WhatsApp Cliente",
+        "tool": "whatsapp",
+        "config": {
+          "operation": "send_message",
+          "recipient": "39XXXXXXXXXX"
+        }
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "tool",
+      "position": { "x": 600, "y": 440 },
+      "data": {
+        "label": "WhatsApp Magazzino",
+        "tool": "whatsapp",
+        "config": {
+          "operation": "send_message",
+          "recipient": "39XXXXXXXXXX"
+        }
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 620 },
+      "data": {
+        "label": "Risultati Invio",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 350, "y": 780 },
+      "data": {
+        "label": "Stato Notifiche",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-6", "source": "node_4", "target": "node_6" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

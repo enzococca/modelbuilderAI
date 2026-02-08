@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Upload Documento", "inputType": "file", "acceptedFormats": ".pdf,.docx,.txt,.csv" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Leggi File", "tool": "file_processor", "operation": "read" }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 300, "y": 370 },
+      "data": { "label": "Riassunto", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un assistente esperto in sintesi documentale. Ricevi il contenuto di un file e devi:\n1. Identificare il tipo di documento\n2. Estrarre i punti chiave\n3. Fornire un riassunto strutturato\n4. Elencare eventuali azioni o decisioni menzionate", "temperature": 0.5, "maxTokens": 2048 }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 300, "y": 540 },
+      "data": { "label": "Riassunto Documento", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

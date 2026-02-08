@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "Testo da Trasformare",
+        "inputType": "text",
+        "defaultValue": "Nome: Mario Rossi\nEmail: mario@example.com\nTel: +39 123 456 789\n\nNome: Lucia Bianchi\nEmail: lucia@test.it\nTel: +39 987 654 321\n\nNome: Marco Verdi\nEmail: marco@demo.org"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "Estrai Email",
+        "tool": "text_transformer",
+        "operation": "regex_extract",
+        "pattern": "[\\w.+-]+@[\\w-]+\\.[\\w.]+"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 300, "y": 200 },
+      "data": {
+        "label": "Conta Statistiche",
+        "tool": "text_transformer",
+        "operation": "count"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 500, "y": 200 },
+      "data": {
+        "label": "Formatta Template",
+        "tool": "text_transformer",
+        "operation": "template",
+        "template": "REPORT CONTATTI\n===============\nTotale: {word_count} parole, {line_count} righe\n\nContenuto:\n{input}"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 300, "y": 380 },
+      "data": {
+        "label": "Raccogli Risultati",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 300, "y": 530 },
+      "data": {
+        "label": "Risultato",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e1-4", "source": "node_1", "target": "node_4" },
+    { "id": "e2-5", "source": "node_2", "target": "node_5" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}

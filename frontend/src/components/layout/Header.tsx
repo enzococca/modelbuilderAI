@@ -18,9 +18,13 @@ export function Header() {
   return (
     <header className="h-12 border-b border-gray-800 bg-gray-900 flex items-center px-4 gap-4">
       {!sidebarOpen && (
-        <button onClick={toggleSidebar} className="p-1 hover:bg-gray-800 rounded">
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={toggleSidebar} className="p-1 hover:bg-gray-800 rounded">
+            <Menu className="w-5 h-5" />
+          </button>
+          <img src="/vite.svg" alt="Gennaro" className="w-6 h-6" />
+          <span className="text-sm font-semibold text-white">Gennaro</span>
+        </div>
       )}
 
       <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5">

@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Sito da Analizzare",
+        "inputType": "text",
+        "defaultValue": "Al-Khutm"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 100, "y": 220 },
+      "data": {
+        "label": "Query US",
+        "tool": "pyarchinit_tool",
+        "config": {
+          "operation": "query_us",
+          "db_path": "~/.pyarchinit/pyarchinit_DB_folder/pyarchinit_db.sqlite",
+          "db_type": "sqlite",
+          "sito": "Al-Khutm"
+        }
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 600, "y": 220 },
+      "data": {
+        "label": "Query Inventario",
+        "tool": "pyarchinit_tool",
+        "config": {
+          "operation": "query_inventory",
+          "db_path": "~/.pyarchinit/pyarchinit_DB_folder/pyarchinit_db.sqlite",
+          "db_type": "sqlite",
+          "sito": "Al-Khutm"
+        }
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 420 },
+      "data": {
+        "label": "Unisci Dati",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Archeologo Analista",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo specializzato. Ricevi dati da PyArchInit: unita stratigrafiche (US) e inventario materiali dello stesso sito.\n\nAnalizza e produci:\n1. **Sintesi Stratigrafica**: numero US, tipologie, distribuzione per area\n2. **Materiali Associati**: correla i materiali con le US di provenienza\n3. **Cronologia**: fasi e periodi individuati\n4. **Interpretazione**: cosa raccontano i dati sulla storia del sito\n5. **Raccomandazioni**: approfondimenti suggeriti\n\nFormato: report markdown con tabelle. Italiano.",
+        "temperature": 0.4,
+        "maxTokens": 3000,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 350, "y": 800 },
+      "data": {
+        "label": "Report Sito",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}

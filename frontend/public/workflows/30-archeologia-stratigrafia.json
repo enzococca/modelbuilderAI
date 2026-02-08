@@ -1,0 +1,52 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Sito Al-Khutm",
+        "inputType": "text",
+        "defaultValue": "SELECT sito, area, us, d_stratigrafica, d_interpretativa, descrizione, interpretazione, periodo_iniziale, fase_iniziale, anno_scavo, scavato, stato_di_conservazione FROM us_table WHERE sito='Al-Khutm' ORDER BY area, CAST(us AS INTEGER) LIMIT 50"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Query US Al-Khutm",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/ktm24.sqlite",
+        "queryTemplate": "SELECT sito, area, us, d_stratigrafica, d_interpretativa, descrizione, interpretazione, periodo_iniziale, fase_iniziale, anno_scavo, scavato, stato_di_conservazione FROM us_table WHERE sito='Al-Khutm' ORDER BY area, CAST(us AS INTEGER) LIMIT 50"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "agent",
+      "position": { "x": 350, "y": 400 },
+      "data": {
+        "label": "Archeologo Stratigrafo",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo specializzato in stratigrafia. Ricevi dati reali dal database PyArchInit del sito di Al-Khutm (Oman).\n\nI dati contengono: sito, area, US, definizione stratigrafica, interpretazione, descrizione, periodo, fase, anno scavo, stato conservazione.\n\nAnalizza i dati e produci:\n1. **Sintesi stratigrafica**: quante US, distribuzione per area, tipologie prevalenti (Silty-sand layer, Filling, Wall, Structure, etc.)\n2. **Fasi individuate**: raggruppa le US per periodo/fase, descrivi la sequenza\n3. **Interpretazione**: cosa raccontano queste US sulla storia del sito? (depositi alluvionali, attivita edilizia, strutture murarie)\n4. **US significative**: evidenzia le US piu importanti e perche\n5. **Raccomandazioni**: suggerisci approfondimenti\n\nFormato: report markdown strutturato con tabelle. Rispondi in italiano.",
+        "temperature": 0.4,
+        "maxTokens": 3000,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Report Stratigrafia",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" }
+  ]
+}

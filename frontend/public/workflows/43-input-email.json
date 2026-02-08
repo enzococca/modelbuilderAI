@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Email Inbox", "inputType": "email", "source": "inbox@azienda.com", "defaultValue": "From: mario@example.com\nTo: team@azienda.com\nSubject: Riunione progetto Alpha\nDate: 2025-01-15\n\nCari colleghi,\nvi ricordo la riunione di domani alle 15:00 per discutere:\n1. Stato avanzamento fase 2\n2. Budget Q1 - serve approvazione entro venerdi\n3. Nuove assunzioni: 2 sviluppatori senior\n\nPortate i report aggiornati. Mario ha confermato la sua presenza.\n\nA domani,\nLuca" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 300, "y": 250 },
+      "data": { "label": "Estrai Task", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un assistente per la gestione email. Analizza l'email ricevuta e produci:\n1. Mittente e destinatari\n2. Oggetto e data\n3. Lista di AZIONI/TASK da completare con deadline\n4. Persone coinvolte\n5. Priorita (alta/media/bassa) per ogni task", "temperature": 0.3, "maxTokens": 1024 }
+    },
+    {
+      "id": "node_3",
+      "type": "output",
+      "position": { "x": 300, "y": 430 },
+      "data": { "label": "Task Estratti", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" }
+  ]
+}

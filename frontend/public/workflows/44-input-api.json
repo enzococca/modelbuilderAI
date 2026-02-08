@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "API Endpoint", "inputType": "api", "source": "https://jsonplaceholder.typicode.com/posts?_limit=5", "defaultValue": "https://jsonplaceholder.typicode.com/posts?_limit=5" }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Chiamata API", "tool": "http_request", "method": "GET", "urlTemplate": "{input}", "timeout": 15 }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 300, "y": 370 },
+      "data": { "label": "Formatta JSON", "tool": "json_parser", "operation": "pretty" }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 300, "y": 530 },
+      "data": { "label": "Analisi Dati", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Ricevi dati JSON da un'API REST. Analizzali e produci:\n1. Struttura dei dati (campi e tipi)\n2. Numero di record\n3. Riassunto del contenuto\n4. Eventuali pattern o anomalie nei dati", "temperature": 0.5, "maxTokens": 1024 }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 300, "y": 700 },
+      "data": { "label": "Report API", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

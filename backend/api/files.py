@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -22,8 +23,13 @@ async def upload_file(
     project_id: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
+    import logging
+    logger = logging.getLogger("files")
+    logger.info("Upload started: %s", file.filename)
     content = await file.read()
+    logger.info("File read: %d bytes", len(content))
     path = await save_upload(file.filename or "upload", content, project_id)
+    logger.info("File saved: %s", path)
 
     row = FileRow(
         id=str(uuid.uuid4()),
@@ -36,16 +42,19 @@ async def upload_file(
     db.add(row)
     await db.commit()
 
-    # Index text content in vector store for RAG
-    text = extract_text(path)
-    chunk_count = 0
-    if text.strip():
-        chunk_count = vector_store.index_document(
-            file_id=row.id,
-            filename=row.filename,
-            text=text,
-            project_id=project_id,
-        )
+    # Index text content in vector store for RAG (run in thread to avoid blocking event loop)
+    try:
+        text = await asyncio.to_thread(extract_text, path)
+        if text.strip():
+            await asyncio.to_thread(
+                vector_store.index_document,
+                file_id=row.id,
+                filename=row.filename,
+                text=text,
+                project_id=project_id,
+            )
+    except Exception:
+        pass  # Don't fail the upload if indexing fails
 
     return FileOut(
         id=row.id,

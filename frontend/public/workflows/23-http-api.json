@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "API URL",
+        "inputType": "text",
+        "defaultValue": "https://jsonplaceholder.typicode.com/posts"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 180 },
+      "data": {
+        "label": "GET Request",
+        "tool": "http_request",
+        "method": "GET",
+        "urlTemplate": "{input}",
+        "timeout": 15,
+        "retryCount": 2,
+        "retryDelay": 3,
+        "onError": "fallback",
+        "fallbackValue": "[]"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 300, "y": 350 },
+      "data": {
+        "label": "Parse JSON",
+        "tool": "json_parser",
+        "operation": "flatten"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 300, "y": 520 },
+      "data": {
+        "label": "Analista API",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Ricevi dati da un'API REST. Analizza la struttura, identifica i campi principali, e crea un report riassuntivo con statistiche.",
+        "temperature": 0.4,
+        "maxTokens": 2048,
+        "fallbackModel": "gpt-4o-mini"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "output",
+      "position": { "x": 300, "y": 690 },
+      "data": {
+        "label": "Report API",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" }
+  ]
+}

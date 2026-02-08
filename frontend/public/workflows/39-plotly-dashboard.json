@@ -1,0 +1,52 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Dati per Dashboard",
+        "inputType": "text",
+        "defaultValue": "Vendite Q1: Prodotto A=150, B=230, C=90, D=310, E=175\nVendite Q2: Prodotto A=180, B=210, C=120, D=280, E=220\nVendite Q3: Prodotto A=200, B=190, C=160, D=350, E=240\nVendite Q4: Prodotto A=170, B=250, C=140, D=300, E=260"
+      }
+    },
+    {
+      "id": "chart_plotly",
+      "type": "tool",
+      "position": { "x": 350, "y": 250 },
+      "data": {
+        "label": "Dashboard Plotly",
+        "tool": "code_executor",
+        "language": "python",
+        "timeout": 30,
+        "codeTemplate": "import plotly.graph_objects as go\nfrom plotly.subplots import make_subplots\nimport os, re\n\ndata_text = \"\"\"{input}\"\"\"\n\n# Parse vendite per quarter\nquarters = {}\nfor line in data_text.strip().split('\\n'):\n    m = re.match(r'Vendite (Q\\d):\\s*(.*)', line)\n    if not m:\n        continue\n    q = m.group(1)\n    pairs = re.findall(r'(\\w+)=(\\d+)', m.group(2))\n    quarters[q] = {k: int(v) for k, v in pairs}\n\nif not quarters:\n    print('Nessun dato trovato')\nelse:\n    products = list(list(quarters.values())[0].keys())\n    qs = sorted(quarters.keys())\n\n    fig = make_subplots(\n        rows=2, cols=2,\n        subplot_titles=('Trend Vendite per Prodotto', 'Totale per Quarter', 'Composizione Q4', 'Confronto Prodotti'),\n        specs=[[{'type': 'scatter'}, {'type': 'bar'}], [{'type': 'pie'}, {'type': 'bar'}]]\n    )\n\n    colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A']\n\n    # Line chart - trend\n    for i, p in enumerate(products):\n        vals = [quarters[q].get(p, 0) for q in qs]\n        fig.add_trace(go.Scatter(x=qs, y=vals, name=p, line=dict(color=colors[i % len(colors)])), row=1, col=1)\n\n    # Bar - totale per quarter\n    totals = [sum(quarters[q].values()) for q in qs]\n    fig.add_trace(go.Bar(x=qs, y=totals, marker_color=colors[:len(qs)], text=totals, textposition='auto', showlegend=False), row=1, col=2)\n\n    # Pie - ultimo quarter\n    last_q = qs[-1]\n    fig.add_trace(go.Pie(labels=products, values=[quarters[last_q][p] for p in products], hole=0.3, showlegend=False), row=2, col=1)\n\n    # Grouped bar - confronto\n    for i, q in enumerate(qs):\n        vals = [quarters[q][p] for p in products]\n        fig.add_trace(go.Bar(name=q, x=products, y=vals, showlegend=False), row=2, col=2)\n\n    fig.update_layout(\n        title_text='Dashboard Vendite',\n        template='plotly_dark',\n        height=700, width=1000,\n        barmode='group'\n    )\n\n    outpath = os.path.join(__artifact_dir__, 'dashboard.html')\n    fig.write_html(outpath, include_plotlyjs='cdn')\n    print(f'Dashboard generata: {len(qs)} quarters, {len(products)} prodotti')\n    print(f'Totali: {dict(zip(qs, totals))}')\n"
+      }
+    },
+    {
+      "id": "agent_analyst",
+      "type": "agent",
+      "position": { "x": 350, "y": 480 },
+      "data": {
+        "label": "Analista Dati",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Ricevi un dashboard interattivo Plotly con dati di vendita per quarter e prodotto. Analizza i trend, evidenzia prodotti in crescita/calo, e suggerisci azioni. Max 300 parole. Italiano.",
+        "temperature": 0.3,
+        "maxTokens": 800
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 350, "y": 660 },
+      "data": {
+        "label": "Dashboard + Analisi",
+        "outputFormat": "html"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-chart", "source": "node_1", "target": "chart_plotly" },
+    { "id": "e-chart-agent", "source": "chart_plotly", "target": "agent_analyst" },
+    { "id": "e-agent-out", "source": "agent_analyst", "target": "output_1" }
+  ]
+}

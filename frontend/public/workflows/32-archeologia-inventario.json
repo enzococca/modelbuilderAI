@@ -1,0 +1,75 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Inventario Al-Khutm",
+        "inputType": "text",
+        "defaultValue": "Genera report inventario materiali del sito Al-Khutm"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Query Inventario Aggregato",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/ktm24.sqlite",
+        "queryTemplate": "SELECT tipo_reperto, COUNT(*) as totale, GROUP_CONCAT(DISTINCT area) as aree, GROUP_CONCAT(DISTINCT stato_conservazione) as conservazione, GROUP_CONCAT(DISTINCT definizione) as definizioni FROM inventario_materiali_table WHERE sito='Al-Khutm' GROUP BY tipo_reperto ORDER BY totale DESC"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 350, "y": 360 },
+      "data": {
+        "label": "Formatta Tabella",
+        "tool": "json_parser",
+        "operation": "flatten"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 350, "y": 530 },
+      "data": {
+        "label": "Catalogatore Materiali",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo responsabile della catalogazione materiali. Ricevi dati REALI aggregati dall'inventario materiali del sito Al-Khutm (Oman) dal database PyArchInit.\n\nI tipi di reperto includono: Tool (Worked stone), Stone vessel (Bowl), Percussion Tool (Grinder), Vessel, ecc.\nLo stato conservazione include: Good, Poor, ecc.\n\nProduci un report:\n1. **Sommario**: totale reperti per categoria, stato conservazione generale\n2. **Tabella inventario**: tipo reperto, quantita, aree, definizioni, stato conservazione\n3. **Analisi distribuzione**: quali aree hanno piu materiali e perche\n4. **Cultura materiale**: cosa ci dicono questi reperti sulla funzione del sito?\n5. **Raccomandazioni**: priorita di studio, conservazione, confronti regionali\n\nFormato: report markdown professionale con tabelle. Rispondi in italiano.",
+        "temperature": 0.4,
+        "maxTokens": 2500,
+        "fallbackModel": "gpt-4o-mini"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "tool",
+      "position": { "x": 150, "y": 720 },
+      "data": {
+        "label": "Salva Report",
+        "tool": "file_manager",
+        "operation": "write_file",
+        "destination": "./output/inventario-al-khutm.md"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 550, "y": 720 },
+      "data": {
+        "label": "Report Inventario",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e4-6", "source": "node_4", "target": "node_6" }
+  ]
+}

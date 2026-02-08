@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Argomento",
+        "inputType": "text",
+        "defaultValue": "Scrivi un articolo sui benefici dell'intelligenza artificiale nell'archeologia"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 160 },
+      "data": {
+        "label": "Scrittore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un esperto scrittore. Scrivi un articolo professionale sull'argomento fornito. L'articolo deve essere in italiano, ben strutturato con titolo, introduzione, corpo e conclusione. Minimo 300 parole.",
+        "temperature": 0.7,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "validator",
+      "position": { "x": 350, "y": 340 },
+      "data": {
+        "label": "Quality Check",
+        "model": "claude-haiku-4-5-20251001",
+        "validationPrompt": "Verifica che l'articolo:\n1. Sia in italiano corretto\n2. Abbia almeno 300 parole\n3. Contenga titolo, introduzione e conclusione\n4. Sia coerente e ben argomentato\n5. Non contenga informazioni palesemente false",
+        "strictness": 7,
+        "includeContext": false
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "output",
+      "position": { "x": 150, "y": 520 },
+      "data": {
+        "label": "Articolo Approvato",
+        "outputFormat": "markdown"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 550, "y": 520 },
+      "data": {
+        "label": "Correttore",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "L'articolo precedente non ha superato la validazione. Leggi il feedback di validazione alla fine del testo e riscrivi l'articolo correggendo tutti i problemi segnalati. Mantieni il tema originale.",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "validator",
+      "position": { "x": 550, "y": 700 },
+      "data": {
+        "label": "Re-Validazione",
+        "model": "claude-haiku-4-5-20251001",
+        "validationPrompt": "Verifica che l'articolo corretto:\n1. Sia in italiano corretto\n2. Abbia almeno 300 parole\n3. Contenga titolo, introduzione e conclusione\n4. Sia coerente e ben argomentato",
+        "strictness": 6,
+        "includeContext": false
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 550, "y": 880 },
+      "data": {
+        "label": "Articolo Corretto",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4", "label": "pass" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5", "label": "fail" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7pass", "source": "node_6", "target": "node_7", "label": "pass" },
+    { "id": "e6-7fail", "source": "node_6", "target": "node_7", "label": "fail" }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Query Database", "inputType": "database", "dbType": "sqlite", "connectionString": "data/db/gennaro.db", "query": "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name" }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 300, "y": 250 },
+      "data": { "label": "Analisi Schema", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Ricevi i risultati di una query SQL. Analizza i dati e produci:\n1. Descrizione delle tabelle/struttura trovata\n2. Numero di record o elementi\n3. Osservazioni sui dati\n4. Suggerimenti per query utili successive", "temperature": 0.5, "maxTokens": 1024 }
+    },
+    {
+      "id": "node_3",
+      "type": "output",
+      "position": { "x": 300, "y": 430 },
+      "data": { "label": "Report Database", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" }
+  ]
+}

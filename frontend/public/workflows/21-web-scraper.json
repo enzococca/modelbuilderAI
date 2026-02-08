@@ -1,0 +1,87 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "URL da scrappare",
+        "inputType": "text",
+        "defaultValue": "https://en.wikipedia.org/wiki/Artificial_intelligence"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "Estrai Testo",
+        "tool": "web_scraper",
+        "operation": "extract_text",
+        "timeout": 15
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 300, "y": 200 },
+      "data": {
+        "label": "Estrai Link",
+        "tool": "web_scraper",
+        "operation": "extract_links",
+        "timeout": 15
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 500, "y": 200 },
+      "data": {
+        "label": "Estrai Tabelle",
+        "tool": "web_scraper",
+        "operation": "extract_tables",
+        "timeout": 15
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 300, "y": 380 },
+      "data": {
+        "label": "Raccogli Dati",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 300, "y": 530 },
+      "data": {
+        "label": "Analista Web",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un analista web. Ricevi il testo, i link e le tabelle estratti da una pagina web. Crea un report strutturato che includa:\n1. Riassunto del contenuto principale\n2. Link piu rilevanti trovati\n3. Dati dalle tabelle (se presenti)\n4. Punti chiave e conclusioni",
+        "temperature": 0.5,
+        "maxTokens": 4096
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 300, "y": 700 },
+      "data": {
+        "label": "Report Scraping",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e1-4", "source": "node_1", "target": "node_4" },
+    { "id": "e2-5", "source": "node_2", "target": "node_5" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

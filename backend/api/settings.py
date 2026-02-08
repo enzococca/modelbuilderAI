@@ -69,6 +69,14 @@ class SettingsUpdate(BaseModel):
     imap_username: str | None = None
     imap_password: str | None = None
     imap_use_ssl: bool | None = None
+    # Resend (email sending)
+    resend_api_key: str | None = None
+    resend_from: str | None = None
+    # Telegram Bot
+    telegram_bot_token: str | None = None
+    # WhatsApp Business
+    whatsapp_token: str | None = None
+    whatsapp_phone_number_id: str | None = None
 
 
 @router.get("/settings")
@@ -105,6 +113,14 @@ async def get_settings():
         "imap_username": settings.imap_username,
         "imap_password_mask": _mask_key(settings.imap_password),
         "imap_use_ssl": settings.imap_use_ssl,
+        # Resend
+        "resend_api_key_mask": _mask_key(settings.resend_api_key),
+        "resend_from": settings.resend_from,
+        # Telegram Bot
+        "telegram_bot_token_mask": _mask_key(settings.telegram_bot_token),
+        # WhatsApp Business
+        "whatsapp_token_mask": _mask_key(settings.whatsapp_token),
+        "whatsapp_phone_number_id": settings.whatsapp_phone_number_id,
     }
 
 
@@ -189,6 +205,24 @@ async def update_settings(body: SettingsUpdate):
     if body.imap_use_ssl is not None:
         settings.imap_use_ssl = body.imap_use_ssl
         overrides["imap_use_ssl"] = body.imap_use_ssl
+
+    # Resend
+    if body.resend_api_key and "..." not in body.resend_api_key:
+        settings.resend_api_key = body.resend_api_key
+    if body.resend_from is not None:
+        settings.resend_from = body.resend_from
+        overrides["resend_from"] = body.resend_from
+
+    # Telegram Bot
+    if body.telegram_bot_token and "..." not in body.telegram_bot_token:
+        settings.telegram_bot_token = body.telegram_bot_token
+
+    # WhatsApp Business
+    if body.whatsapp_token and "..." not in body.whatsapp_token:
+        settings.whatsapp_token = body.whatsapp_token
+    if body.whatsapp_phone_number_id is not None:
+        settings.whatsapp_phone_number_id = body.whatsapp_phone_number_id
+        overrides["whatsapp_phone_number_id"] = body.whatsapp_phone_number_id
 
     _save_overrides(overrides)
 

@@ -24,6 +24,18 @@ def create_agent(
     max_tokens: int = 4096,
 ) -> BaseAgent:
     """Factory: create the right agent subclass for a given model ID."""
+    # Ollama models use prefix "ollama:" — strip prefix and use LocalAgent
+    if model.startswith("ollama:"):
+        from agents.local_agent import LocalAgent
+        actual_model = model.removeprefix("ollama:")
+        return LocalAgent(
+            name=name,
+            model=actual_model,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
     # LM Studio models use prefix "lmstudio:" and OpenAI-compatible API
     if model.startswith("lmstudio:"):
         from agents.openai_agent import OpenAIAgent

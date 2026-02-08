@@ -85,21 +85,44 @@ class CodeExecutorTool(BaseTool):
             'sklearn', 'scipy', 'PIL', 'csv', 'io', 'base64',
             'hashlib', 'struct', 'copy', 'dataclasses',
             'pathlib', 'tempfile', 'os.path',
+            # Plotly for interactive charts
+            'plotly', 'plotly.express', 'plotly.graph_objects',
+            'plotly.subplots', 'plotly.io',
         }
 
         # Allow submodule imports (e.g. sklearn.linear_model)
         allowed_prefixes = {
             'numpy', 'pandas', 'matplotlib', 'sklearn',
             'scipy', 'PIL', 'collections', 'datetime',
+            'plotly',
+        }
+
+        # Explicitly blocked modules (dangerous)
+        blocked_modules = {
+            'subprocess', 'shutil', 'signal', 'ctypes',
+            'multiprocessing', 'threading', 'socket', 'http',
+            'urllib', 'ftplib', 'smtplib', 'xmlrpc',
+            'webbrowser', 'antigravity', 'code', 'codeop',
         }
 
         original_import = raw_builtins.get('__import__', __import__)
 
         def safe_import(name, *args, **kwargs):
             top = name.split('.')[0]
+            # Block dangerous modules
+            if top in blocked_modules:
+                raise ImportError(f"Import of '{name}' is not allowed in sandbox")
+            # Allow whitelisted + all stdlib (anything already in sys.modules or importable)
             if name in allowed_modules or top in allowed_prefixes:
                 return original_import(name, *args, **kwargs)
-            raise ImportError(f"Import of '{name}' is not allowed in sandbox")
+            # Allow standard library and internal modules (start with _ or are already loaded)
+            if top.startswith('_') or top in sys.modules:
+                return original_import(name, *args, **kwargs)
+            # Allow common stdlib modules that libraries depend on
+            try:
+                return original_import(name, *args, **kwargs)
+            except ImportError:
+                raise
 
         safe_builtins['__import__'] = safe_import
 
@@ -133,10 +156,27 @@ class CodeExecutorTool(BaseTool):
             parts.append(f"Output:\n{output}")
         if errors:
             parts.append(f"Errors:\n{errors}")
-        if artifacts:
-            parts.append(f"Artifacts:\n{json.dumps(artifacts, indent=2)}")
 
-        return "\n".join(parts) or "Code executed successfully (no output)."
+        # Format artifacts as ```artifact blocks for ResultsViewer
+        for art in artifacts:
+            if art.get("type", "").startswith("image/"):
+                block = json.dumps({
+                    "type": "image",
+                    "name": art["name"],
+                    "data": art["data"],
+                })
+                parts.append(f"```artifact\n{block}\n```")
+            elif art.get("type") == "text" and art["name"].endswith(".html"):
+                block = json.dumps({
+                    "type": "html",
+                    "name": art["name"],
+                    "data": art["data"],
+                })
+                parts.append(f"```artifact\n{block}\n```")
+            elif art.get("type") == "text":
+                parts.append(f"File `{art['name']}`:\n{art['data']}")
+
+        return "\n\n".join(parts) or "Code executed successfully (no output)."
 
     def _scan_artifacts(self, tmpdir: str) -> list[dict[str, str]]:
         """Scan temp directory for generated files and encode as base64."""

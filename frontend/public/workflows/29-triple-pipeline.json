@@ -1,0 +1,208 @@
+{
+  "nodes": [
+    {
+      "id": "input_market",
+      "type": "input",
+      "position": { "x": 80, "y": 30 },
+      "data": {
+        "label": "Dati di Mercato",
+        "inputType": "text",
+        "defaultValue": "Settore: AI e Machine Learning. Trend Q4 2025: crescita cloud AI +40%, edge AI emergente, domanda GPU stabile. Competitor principali: OpenAI, Google DeepMind, Anthropic, Meta AI."
+      }
+    },
+    {
+      "id": "input_tech",
+      "type": "input",
+      "position": { "x": 400, "y": 30 },
+      "data": {
+        "label": "Stack Tecnologico",
+        "inputType": "text",
+        "defaultValue": "Stack attuale: Python backend (FastAPI), React frontend, PostgreSQL, Redis cache, Docker/K8s deploy. Infra: AWS eu-west-1, budget mensile 15K EUR. Team: 4 backend, 3 frontend, 2 DevOps."
+      }
+    },
+    {
+      "id": "input_business",
+      "type": "input",
+      "position": { "x": 720, "y": 30 },
+      "data": {
+        "label": "Obiettivi Business",
+        "inputType": "text",
+        "defaultValue": "Obiettivo: lanciare piattaforma AI SaaS entro 6 mesi. Target: PMI europee. Modello: freemium + enterprise. KPI: 1000 utenti beta, 50 clienti paganti, MRR 30K EUR entro 12 mesi."
+      }
+    },
+
+    {
+      "id": "agent_market",
+      "type": "agent",
+      "position": { "x": 80, "y": 200 },
+      "data": {
+        "label": "Analista di Mercato",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un analista di mercato esperto nel settore tech/AI. Analizza i dati forniti e produci:\n1. Analisi SWOT del settore\n2. Trend principali e opportunità\n3. Rischi e minacce\n4. Posizionamento competitivo consigliato\nFormato: markdown strutturato, conciso.",
+        "temperature": 0.5,
+        "maxTokens": 1500,
+        "setVariable": "analisi_mercato"
+      }
+    },
+    {
+      "id": "agent_tech",
+      "type": "agent",
+      "position": { "x": 400, "y": 200 },
+      "data": {
+        "label": "Architetto Software",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un architetto software senior. Analizza lo stack tecnologico e produci:\n1. Valutazione dell'architettura attuale\n2. Gap tecnologici da colmare per una piattaforma AI SaaS\n3. Componenti da aggiungere (ML serving, monitoring, multi-tenancy)\n4. Stima effort per componente (S/M/L)\nFormato: markdown con tabelle.",
+        "temperature": 0.4,
+        "maxTokens": 1500,
+        "setVariable": "analisi_tech"
+      }
+    },
+    {
+      "id": "agent_business",
+      "type": "agent",
+      "position": { "x": 720, "y": 200 },
+      "data": {
+        "label": "Business Strategist",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un business strategist esperto in SaaS e startup. Analizza gli obiettivi e produci:\n1. Go-to-market strategy\n2. Pricing model dettagliato (free/pro/enterprise)\n3. Roadmap trimestrale (Q1-Q4)\n4. Metriche di successo per fase\nFormato: markdown con timeline.",
+        "temperature": 0.5,
+        "maxTokens": 1500,
+        "setVariable": "analisi_business"
+      }
+    },
+
+    {
+      "id": "agg_cross",
+      "type": "aggregator",
+      "position": { "x": 400, "y": 400 },
+      "data": {
+        "label": "Incrocio Analisi",
+        "strategy": "concatenate"
+      }
+    },
+
+    {
+      "id": "agent_validator",
+      "type": "agent",
+      "position": { "x": 80, "y": 580 },
+      "data": {
+        "label": "Validatore Coerenza",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Ricevi 3 analisi: mercato, tecnica, business. Il tuo compito:\n1. Verifica COERENZA tra le 3 analisi\n2. Identifica CONFLITTI (es. budget insufficiente per l'architettura proposta, timeline irrealistica)\n3. Identifica SINERGIE (dove le analisi si rafforzano a vicenda)\n4. Dai un punteggio di coerenza 1-10\nSe < 7: segnala i problemi specifici.\nRispondi in italiano, formato strutturato.",
+        "temperature": 0.3,
+        "maxTokens": 1024,
+        "setVariable": "validazione"
+      }
+    },
+    {
+      "id": "agent_risk",
+      "type": "agent",
+      "position": { "x": 400, "y": 580 },
+      "data": {
+        "label": "Risk Analyzer",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Analizza i 3 report (mercato, tech, business) incrociati e identifica:\n1. TOP 5 rischi ordinati per impatto × probabilità\n2. Per ogni rischio: descrizione, impatto (1-5), probabilità (1-5), mitigazione\n3. Piano di contingenza per i top 3\nFormato: tabella markdown. Rispondi in italiano.",
+        "temperature": 0.3,
+        "maxTokens": 1024,
+        "setVariable": "rischi"
+      }
+    },
+    {
+      "id": "agent_synth",
+      "type": "agent",
+      "position": { "x": 720, "y": 580 },
+      "data": {
+        "label": "Sintetizzatore KPI",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Dai 3 report (mercato, tech, business), estrai e unifica le metriche in una dashboard sintetica:\n1. KPI di mercato (TAM, crescita, market share target)\n2. KPI tecnici (uptime target, latenza, throughput)\n3. KPI business (MRR, CAC, LTV, churn)\n4. Timeline milestone (6 mesi)\nFormato: tabella markdown compatta. Rispondi in italiano.",
+        "temperature": 0.3,
+        "maxTokens": 1024,
+        "setVariable": "kpi"
+      }
+    },
+
+    {
+      "id": "delay_review",
+      "type": "delay",
+      "position": { "x": 400, "y": 750 },
+      "data": {
+        "label": "Pausa Review (2s)",
+        "delaySeconds": 2
+      }
+    },
+
+    {
+      "id": "agg_final",
+      "type": "aggregator",
+      "position": { "x": 400, "y": 900 },
+      "data": {
+        "label": "Assembla Tutto",
+        "strategy": "concatenate"
+      }
+    },
+
+    {
+      "id": "agent_final",
+      "type": "agent",
+      "position": { "x": 400, "y": 1060 },
+      "data": {
+        "label": "Executive Report Writer",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un C-level advisor. Ricevi: analisi di mercato, architettura tech, strategia business, validazione coerenza, analisi rischi, e dashboard KPI.\n\nScrivi un EXECUTIVE REPORT completo per il board:\n\n## Sommario Esecutivo (3-5 righe)\n## 1. Opportunità di Mercato\n## 2. Architettura e Roadmap Tecnica\n## 3. Strategia Go-to-Market e Pricing\n## 4. Rischi e Mitigazioni\n## 5. KPI e Milestone\n## 6. Raccomandazione Finale (GO / NO-GO / GO con riserve)\n\nStile: professionale, orientato alla decisione, dati concreti. Italiano. Max 2000 parole.",
+        "temperature": 0.4,
+        "maxTokens": 4096,
+        "fallbackModel": "gpt-4o",
+        "retryCount": 1,
+        "retryDelay": 3
+      }
+    },
+
+    {
+      "id": "tool_save",
+      "type": "tool",
+      "position": { "x": 200, "y": 1240 },
+      "data": {
+        "label": "Salva Report",
+        "tool": "file_manager",
+        "operation": "write_file",
+        "destination": "./output/executive-report-ai-saas.md"
+      }
+    },
+    {
+      "id": "output_final",
+      "type": "output",
+      "position": { "x": 550, "y": 1240 },
+      "data": {
+        "label": "Executive Report",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e-im-am", "source": "input_market", "target": "agent_market" },
+    { "id": "e-it-at", "source": "input_tech", "target": "agent_tech" },
+    { "id": "e-ib-ab", "source": "input_business", "target": "agent_business" },
+
+    { "id": "e-am-ac", "source": "agent_market", "target": "agg_cross" },
+    { "id": "e-at-ac", "source": "agent_tech", "target": "agg_cross" },
+    { "id": "e-ab-ac", "source": "agent_business", "target": "agg_cross" },
+
+    { "id": "e-ac-val", "source": "agg_cross", "target": "agent_validator" },
+    { "id": "e-ac-risk", "source": "agg_cross", "target": "agent_risk" },
+    { "id": "e-ac-synth", "source": "agg_cross", "target": "agent_synth" },
+
+    { "id": "e-val-delay", "source": "agent_validator", "target": "delay_review" },
+    { "id": "e-risk-delay", "source": "agent_risk", "target": "delay_review" },
+    { "id": "e-synth-delay", "source": "agent_synth", "target": "delay_review" },
+
+    { "id": "e-delay-agg", "source": "delay_review", "target": "agg_final" },
+    { "id": "e-am-agg", "source": "agent_market", "target": "agg_final" },
+    { "id": "e-at-agg", "source": "agent_tech", "target": "agg_final" },
+    { "id": "e-ab-agg", "source": "agent_business", "target": "agg_final" },
+
+    { "id": "e-agg-final", "source": "agg_final", "target": "agent_final" },
+
+    { "id": "e-final-save", "source": "agent_final", "target": "tool_save" },
+    { "id": "e-final-out", "source": "agent_final", "target": "output_final" }
+  ]
+}

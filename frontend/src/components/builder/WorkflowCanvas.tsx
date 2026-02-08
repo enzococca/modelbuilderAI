@@ -10,7 +10,7 @@ import {
 } from '@xyflow/react';
 import type { Connection, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Save, Play, Loader2, CheckCircle2, FileDown, FileUp, RotateCcw, Square, X, Maximize2, Minimize2 } from 'lucide-react';
+import { Save, Play, Loader2, CheckCircle2, FileDown, FileUp, RotateCcw, Square, X, Maximize2, Minimize2, ChevronUp } from 'lucide-react';
 import { AgentNode } from './AgentNode';
 import { ToolNode } from './ToolNode';
 import { ConditionNode } from './ConditionNode';
@@ -20,6 +20,9 @@ import { LoopNode } from './LoopNode';
 import { AggregatorNode } from './AggregatorNode';
 import { MetaAgentNode } from './MetaAgentNode';
 import { ChunkerNode } from './ChunkerNode';
+import { DelayNode } from './DelayNode';
+import { SwitchNode } from './SwitchNode';
+import { ValidatorNode } from './ValidatorNode';
 import { DeletableEdge } from './DeletableEdge';
 import { NodePalette } from './NodePalette';
 import { NodeConfig } from './NodeConfig';
@@ -40,6 +43,9 @@ const nodeTypes = {
   aggregator: AggregatorNode,
   meta_agent: MetaAgentNode,
   chunker: ChunkerNode,
+  delay: DelayNode,
+  switch: SwitchNode,
+  validator: ValidatorNode,
 };
 
 const edgeTypes = {
@@ -62,7 +68,8 @@ export function WorkflowCanvas() {
   const [executionStatus, setExecutionStatus] = useState<string | null>(null);
   const [executionResults, setExecutionResults] = useState<Record<string, string> | null>(null);
   const [executionError, setExecutionError] = useState<string | null>(null);
-  const [showResults, setShowResults] = useState(false);
+  const [resultsVisible, setResultsVisible] = useState(false);
+  const [resultsMinimized, setResultsMinimized] = useState(false);
   const [resultsExpanded, setResultsExpanded] = useState(false);
 
   const { currentWorkflow, setCurrentWorkflow, loadVersion } = useWorkflowStore();
@@ -92,7 +99,8 @@ export function WorkflowCanvas() {
         setRunning(false);
         if (results) {
           setExecutionResults(results);
-          setShowResults(true);
+          setResultsVisible(true);
+          setResultsMinimized(false);
         }
       }
     });
@@ -108,7 +116,8 @@ export function WorkflowCanvas() {
         ...(prev || {}),
         [nodeId]: partial,
       }));
-      setShowResults(true);
+      setResultsVisible(true);
+      setResultsMinimized(false);
     });
 
     return () => { unsub(); unsubStream(); };
@@ -177,7 +186,8 @@ export function WorkflowCanvas() {
     setExecutionStatus(null);
     setExecutionResults(null);
     setExecutionError(null);
-    setShowResults(false);
+    setResultsVisible(false);
+    setResultsMinimized(false);
   }, [currentWorkflow, setNodes, setEdges]);
 
   // Sync from store when loadFromDefinition is called externally (e.g. from chat)
@@ -198,7 +208,8 @@ export function WorkflowCanvas() {
     setExecutionStatus(null);
     setExecutionResults(null);
     setExecutionError(null);
-    setShowResults(false);
+    setResultsVisible(false);
+    setResultsMinimized(false);
   }, [loadVersion, setNodes, setEdges]);
 
   const onConnect = useCallback(
@@ -255,7 +266,8 @@ export function WorkflowCanvas() {
     setExecutionStatus(null);
     setExecutionResults(null);
     setExecutionError(null);
-    setShowResults(false);
+    setResultsVisible(false);
+    setResultsMinimized(false);
   }, [setNodes, setEdges, setCurrentWorkflow]);
 
   const buildDefinition = useCallback((): WorkflowDefinition => ({
@@ -315,7 +327,8 @@ export function WorkflowCanvas() {
     setExecutionStatus(null);
     setExecutionResults(null);
     setExecutionError(null);
-    setShowResults(false);
+    setResultsVisible(false);
+    setResultsMinimized(false);
     setRunning(true);
 
     try {
@@ -367,7 +380,8 @@ export function WorkflowCanvas() {
         setExecutionStatus(null);
         setExecutionResults(null);
         setExecutionError(null);
-        setShowResults(false);
+        setResultsVisible(false);
+    setResultsMinimized(false);
         // Update nodeId counter
         const maxId = loaded.reduce((max, n) => {
           const num = parseInt(n.id.replace(/\D/g, ''), 10);
@@ -404,7 +418,8 @@ export function WorkflowCanvas() {
     setExecutionStatus(null);
     setExecutionResults(null);
     setExecutionError(null);
-    setShowResults(false);
+    setResultsVisible(false);
+    setResultsMinimized(false);
     const maxId = loaded.reduce((max, n) => {
       const num = parseInt(n.id.replace(/\D/g, ''), 10);
       return isNaN(num) ? max : Math.max(max, num);
@@ -499,6 +514,14 @@ export function WorkflowCanvas() {
             <FileDown className="w-3.5 h-3.5" />
           </button>
         )}
+
+        {executionResults && !resultsVisible && !resultsMinimized && (
+          <button onClick={() => { setResultsVisible(true); setResultsMinimized(false); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm transition-colors">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Risultati
+          </button>
+        )}
       </div>
 
       {/* Canvas + panels */}
@@ -526,8 +549,22 @@ export function WorkflowCanvas() {
             <MiniMap nodeColor="#6366f1" maskColor="rgba(0,0,0,0.7)" className="!bg-gray-900 !border-gray-700" />
           </ReactFlow>
 
+          {/* Minimized Results Bar */}
+          {resultsMinimized && executionResults && (
+            <div className="absolute bottom-4 left-4 right-4 z-10">
+              <button
+                onClick={() => { setResultsVisible(true); setResultsMinimized(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 bg-gray-900/95 border border-gray-700 rounded-xl shadow-2xl backdrop-blur-sm hover:border-indigo-500/50 transition-colors"
+              >
+                <span className={`w-2 h-2 rounded-full ${executionError ? 'bg-red-500' : 'bg-green-500'}`} />
+                <span className="text-sm font-medium">Risultati ({Object.keys(executionResults).length} nodi)</span>
+                <ChevronUp className="w-4 h-4 ml-auto text-gray-400" />
+              </button>
+            </div>
+          )}
+
           {/* Execution Results Overlay */}
-          {showResults && executionResults && (
+          {resultsVisible && executionResults && (
             <div className={`absolute bg-gray-900/95 border border-gray-700 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm z-10 transition-all ${
               resultsExpanded
                 ? 'inset-2'
@@ -550,7 +587,10 @@ export function WorkflowCanvas() {
                         ['csv', '.csv', 'CSV', false],
                         ['xlsx', '.xlsx', 'Excel', false],
                         ['png', '.png', 'Immagine PNG', false],
-                        ['zip', 'ZIP', 'ZIP', false],
+                        ['geojson', '.geojson', 'GeoJSON', false],
+                        ['shapefile', '.shp', 'Shapefile', false],
+                        ['zip', 'ZIP', 'ZIP risultati', false],
+                        ['zip_all', 'ZIP All', 'ZIP tutti i formati', false],
                       ] as const).map(([fmt, label, title, smart]) => (
                         <button
                           key={fmt}
@@ -570,7 +610,18 @@ export function WorkflowCanvas() {
                   >
                     {resultsExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                   </button>
-                  <button onClick={() => { setShowResults(false); setResultsExpanded(false); }} className="text-gray-400 hover:text-white">
+                  <button
+                    onClick={() => { setResultsVisible(false); setResultsMinimized(true); setResultsExpanded(false); }}
+                    className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"
+                    title="Minimizza"
+                  >
+                    <Minimize2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => { setResultsVisible(false); setResultsMinimized(false); setResultsExpanded(false); }}
+                    className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-700"
+                    title="Chiudi"
+                  >
                     <X className="w-4 h-4" />
                   </button>
                 </div>

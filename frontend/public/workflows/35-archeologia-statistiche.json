@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Statistiche + Grafici",
+        "inputType": "text",
+        "defaultValue": "Genera statistiche con grafici Plotly sulle US del sito Al-Khutm"
+      }
+    },
+    {
+      "id": "db_stats",
+      "type": "tool",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Query Statistiche US",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/ktm24.sqlite",
+        "queryTemplate": "SELECT area, d_stratigrafica as tipo, COUNT(*) as num_us FROM us_table WHERE sito='Al-Khutm' AND d_stratigrafica != '' GROUP BY area, d_stratigrafica ORDER BY num_us DESC"
+      }
+    },
+    {
+      "id": "chart_gen",
+      "type": "tool",
+      "position": { "x": 350, "y": 370 },
+      "data": {
+        "label": "Genera Grafici Plotly",
+        "tool": "code_executor",
+        "language": "python",
+        "timeout": 30,
+        "codeTemplate": "import plotly.graph_objects as go\nfrom plotly.subplots import make_subplots\nimport json, os, re\n\ndata_text = \"\"\"{input}\"\"\"\n\n# Parse the tabular data\nrows = []\nfor line in data_text.strip().split('\\n'):\n    line = line.strip()\n    if not line or line.startswith('---') or line.startswith('area'):\n        continue\n    parts = [p.strip() for p in line.split('|') if p.strip()]\n    if len(parts) >= 3:\n        try:\n            rows.append({'area': parts[0], 'tipo': parts[1], 'num_us': int(parts[2])})\n        except ValueError:\n            continue\n\nif not rows:\n    # Try comma/tab separated\n    for line in data_text.strip().split('\\n'):\n        line = line.strip()\n        if not line:\n            continue\n        parts = re.split(r'[,\\t|]+', line)\n        if len(parts) >= 3:\n            try:\n                rows.append({'area': parts[0].strip(), 'tipo': parts[1].strip(), 'num_us': int(parts[2].strip())})\n            except ValueError:\n                continue\n\n# Aggregate by tipo\ntipo_counts = {}\narea_counts = {}\nfor r in rows:\n    tipo_counts[r['tipo']] = tipo_counts.get(r['tipo'], 0) + r['num_us']\n    area_counts[r['area']] = area_counts.get(r['area'], 0) + r['num_us']\n\n# Create subplots\nfig = make_subplots(\n    rows=1, cols=2,\n    subplot_titles=('US per Tipologia', 'US per Area'),\n    specs=[[{'type': 'pie'}, {'type': 'bar'}]]\n)\n\n# Pie chart - tipologie\ntipi = list(tipo_counts.keys())\nvalori = list(tipo_counts.values())\nfig.add_trace(go.Pie(labels=tipi, values=valori, hole=0.3, textinfo='label+percent'), row=1, col=1)\n\n# Bar chart - aree\naree = list(area_counts.keys())\nnum = list(area_counts.values())\nfig.add_trace(go.Bar(x=aree, y=num, marker_color='indianred', text=num, textposition='auto'), row=1, col=2)\n\nfig.update_layout(\n    title_text='Statistiche US - Sito Al-Khutm (Oman)',\n    template='plotly_dark',\n    height=500, width=900,\n    showlegend=False\n)\n\n# Save as HTML\noutpath = os.path.join(__artifact_dir__, 'chart.html')\nfig.write_html(outpath, include_plotlyjs='cdn')\nprint(f'Chart generato: {len(rows)} righe, {len(tipo_counts)} tipologie, {len(area_counts)} aree')\nprint(f'Tipologie: {dict(tipo_counts)}')\nprint(f'Aree: {dict(area_counts)}')\n"
+      }
+    },
+    {
+      "id": "agent_code",
+      "type": "agent",
+      "position": { "x": 350, "y": 560 },
+      "data": {
+        "label": "Interprete Statistico",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Ricevi dati statistici sulle US del sito Al-Khutm (Oman) e un grafico interattivo Plotly generato automaticamente.\n\nAnalizza:\n1. **Distribuzione per area**: quali aree hanno piu US?\n2. **Tipologie prevalenti**: depositi vs strutture vs riempimenti\n3. **Pattern spaziali**: concentrazioni significative\n4. **Significato**: cosa indicano queste statistiche per l'interpretazione del sito?\n\nIl grafico Plotly e interattivo (hover per dettagli).\n\nMax 400 parole. Formato markdown. Italiano.",
+        "temperature": 0.3,
+        "maxTokens": 1000
+      }
+    },
+    {
+      "id": "notif_webhook",
+      "type": "tool",
+      "position": { "x": 150, "y": 740 },
+      "data": {
+        "label": "Notifica Webhook",
+        "tool": "notifier",
+        "channel": "webhook",
+        "webhookUrl": "https://httpbin.org/post",
+        "webhookMethod": "POST"
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 550, "y": 740 },
+      "data": {
+        "label": "Report Statistiche",
+        "outputFormat": "html"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-db", "source": "node_1", "target": "db_stats" },
+    { "id": "e-db-chart", "source": "db_stats", "target": "chart_gen" },
+    { "id": "e-chart-agent", "source": "chart_gen", "target": "agent_code" },
+    { "id": "e-agent-notif", "source": "agent_code", "target": "notif_webhook" },
+    { "id": "e-agent-out", "source": "agent_code", "target": "output_1" }
+  ]
+}

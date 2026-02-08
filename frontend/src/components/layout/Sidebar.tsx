@@ -41,7 +41,10 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
       <div className="p-4 flex items-center justify-between border-b border-gray-800">
-        <h1 className="text-lg font-bold text-white">Gennaro</h1>
+        <div className="flex items-center gap-2">
+          <img src="/vite.svg" alt="Gennaro" className="w-8 h-8" />
+          <h1 className="text-lg font-bold text-white">Gennaro</h1>
+        </div>
         <button onClick={toggleSidebar} className="p-1 hover:bg-gray-800 rounded">
           <ChevronLeft className="w-5 h-5" />
         </button>

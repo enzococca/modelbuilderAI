@@ -101,7 +101,7 @@ export const validateWorkflow = (id: string) => api.post(`/workflows/${id}/valid
 // Export workflow results
 export const exportWorkflowResults = async (
   id: string,
-  format: 'zip' | 'markdown' | 'pdf' | 'docx' | 'csv' | 'xlsx' | 'png' = 'zip',
+  format: 'zip' | 'zip_all' | 'markdown' | 'pdf' | 'docx' | 'csv' | 'xlsx' | 'png' | 'geojson' | 'shapefile' = 'zip',
   smartFormat = false,
 ) => {
   const params = new URLSearchParams({ format });
@@ -110,7 +110,7 @@ export const exportWorkflowResults = async (
   if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
   const blob = await resp.blob();
   const extMap: Record<string, string> = {
-    zip: 'zip', markdown: 'md', pdf: 'pdf', docx: 'docx', csv: 'csv', xlsx: 'xlsx', png: 'png',
+    zip: 'zip', zip_all: 'zip', markdown: 'md', pdf: 'pdf', docx: 'docx', csv: 'csv', xlsx: 'xlsx', png: 'png', geojson: 'geojson', shapefile: 'zip',
   };
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

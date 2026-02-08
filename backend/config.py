@@ -57,6 +57,26 @@ class Settings(BaseSettings):
     imap_password: str = ""
     imap_use_ssl: bool = True
 
+    # --- Resend (email API, free 100/day) ---
+    resend_api_key: str = ""
+    resend_from: str = ""  # e.g. "Gennaro <onboarding@resend.dev>"
+
+    # --- File Manager ---
+    file_manager_base_dir: str = ""  # sandbox dir (empty = no restriction)
+
+    # --- Telegram Bot ---
+    telegram_bot_token: str = ""
+
+    # --- WhatsApp Business ---
+    whatsapp_token: str = ""
+    whatsapp_phone_number_id: str = ""
+
+    # --- PyArchInit ---
+    pyarchinit_db_path: str = ""  # path to pyarchinit SQLite or PostgreSQL connection string
+
+    # --- Workflow Engine ---
+    default_workflow_timeout: int = 300  # seconds (0 = no timeout)
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",")]

@@ -129,17 +129,18 @@ class GISTool(BaseTool):
             return f"File not found: {path}"
 
         ext = path.suffix.lower()
+        layer = kwargs.get("layer")
 
         if ext in (".tif", ".tiff", ".geotiff"):
             return self._raster_info(path)
         else:
-            return self._vector_info(path)
+            return self._vector_info(path, layer=layer)
 
-    def _vector_info(self, path: Path) -> str:
+    def _vector_info(self, path: Path, layer: str | None = None) -> str:
         """Get info about a vector file."""
         import geopandas as gpd
 
-        gdf = gpd.read_file(path)
+        gdf = gpd.read_file(path, layer=layer)
         geom_types = gdf.geometry.geom_type.value_counts().to_dict()
         bounds = gdf.total_bounds  # [minx, miny, maxx, maxy]
 
@@ -200,7 +201,8 @@ class GISTool(BaseTool):
         import numpy as np
 
         path = self._resolve_path(input_text)
-        gdf = gpd.read_file(path)
+        layer = kwargs.get("layer")
+        gdf = gpd.read_file(path, layer=layer)
 
         analysis_type = kwargs.get("analysis_type", "summary")
 
@@ -462,8 +464,9 @@ class GISTool(BaseTool):
 
         path = self._resolve_path(input_text)
         distance = float(kwargs.get("distance", 100))
+        layer = kwargs.get("layer")
 
-        gdf = gpd.read_file(path)
+        gdf = gpd.read_file(path, layer=layer)
         gdf_m = gdf.to_crs(epsg=3857) if gdf.crs and gdf.crs.is_geographic else gdf
 
         buffered = gdf_m.copy()
@@ -501,13 +504,14 @@ class GISTool(BaseTool):
         if ext in (".tif", ".tiff", ".geotiff"):
             return self._render_raster_map(path, title, cmap)
         else:
-            return self._render_vector_map(path, title, cmap, column)
+            layer = kwargs.get("layer")
+            return self._render_vector_map(path, title, cmap, column, layer=layer)
 
-    def _render_vector_map(self, path: Path, title: str, cmap: str, column: str) -> str:
+    def _render_vector_map(self, path: Path, title: str, cmap: str, column: str, layer: str | None = None) -> str:
         """Render an interactive map from vector data using GeoJSON."""
         import geopandas as gpd
 
-        gdf = gpd.read_file(path)
+        gdf = gpd.read_file(path, layer=layer)
         geojson_str = self._gdf_to_geojson(gdf)
 
         geom_types = gdf.geometry.geom_type.value_counts().to_dict()
@@ -562,6 +566,7 @@ class GISTool(BaseTool):
         """Reproject vector or raster data to a new CRS."""
         path = self._resolve_path(input_text)
         target_crs = kwargs.get("target_crs", "EPSG:4326")
+        layer = kwargs.get("layer")
         ext = path.suffix.lower()
 
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -595,7 +600,7 @@ class GISTool(BaseTool):
         else:
             import geopandas as gpd
 
-            gdf = gpd.read_file(path)
+            gdf = gpd.read_file(path, layer=layer)
             gdf_reproj = gdf.to_crs(target_crs)
 
             out_path = OUTPUT_DIR / f"reproj_{path.stem}.gpkg"

@@ -1,0 +1,114 @@
+{
+  "nodes": [
+    {
+      "id": "input_ktm",
+      "type": "input",
+      "position": { "x": 100, "y": 30 },
+      "data": {
+        "label": "Al-Khutm (Oman)",
+        "inputType": "text",
+        "defaultValue": "Dati stratigrafici del sito Al-Khutm"
+      }
+    },
+    {
+      "id": "input_epi",
+      "type": "input",
+      "position": { "x": 450, "y": 30 },
+      "data": {
+        "label": "Episcopio (Roma)",
+        "inputType": "text",
+        "defaultValue": "Dati stratigrafici del sito Episcopio Portus Romae"
+      }
+    },
+    {
+      "id": "db_ktm_us",
+      "type": "tool",
+      "position": { "x": 100, "y": 200 },
+      "data": {
+        "label": "DB Al-Khutm US",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/ktm24.sqlite",
+        "queryTemplate": "SELECT sito, area, us, d_stratigrafica, d_interpretativa, periodo_iniziale, fase_iniziale, stato_di_conservazione FROM us_table WHERE sito='Al-Khutm' ORDER BY CAST(us AS INTEGER) LIMIT 40"
+      }
+    },
+    {
+      "id": "db_epi_us",
+      "type": "tool",
+      "position": { "x": 450, "y": 200 },
+      "data": {
+        "label": "DB Episcopio US",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite",
+        "queryTemplate": "SELECT sito, area, us, d_stratigrafica, d_interpretativa, periodo_iniziale, fase_iniziale, stato_di_conservazione FROM us_table ORDER BY CAST(us AS INTEGER) LIMIT 40"
+      }
+    },
+    {
+      "id": "agent_ktm",
+      "type": "agent",
+      "position": { "x": 100, "y": 400 },
+      "data": {
+        "label": "Analista Al-Khutm",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Sei un archeologo. Analizza le US REALI del sito Al-Khutm (Oman). Tipologie: Silty-sand layer, Filling, Wall, Structure, Stone structure, etc.\nProduci riassunto sintetico:\n- Numero US, aree, fasi principali\n- Tipologie prevalenti (depositi alluvionali vs strutture murarie)\n- Periodo cronologico\nMax 300 parole. Italiano.",
+        "temperature": 0.3,
+        "maxTokens": 800,
+        "setVariable": "analisi_alkhutm"
+      }
+    },
+    {
+      "id": "agent_epi",
+      "type": "agent",
+      "position": { "x": 450, "y": 400 },
+      "data": {
+        "label": "Analista Episcopio",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Sei un archeologo. Analizza le US REALI del sito Episcopio Portus Romae (Italia). Tipologie: Wall, Threshold, Masonry, Infill Wall, etc.\nProduci riassunto sintetico:\n- Numero US, aree, fasi principali\n- Tipologie prevalenti (strutture murarie, soglie, tamponature)\n- Periodo cronologico (tardo antico/medievale)\nMax 300 parole. Italiano.",
+        "temperature": 0.3,
+        "maxTokens": 800,
+        "setVariable": "analisi_episcopio"
+      }
+    },
+    {
+      "id": "agg_all",
+      "type": "aggregator",
+      "position": { "x": 275, "y": 600 },
+      "data": {
+        "label": "Raccogli Analisi",
+        "strategy": "concatenate",
+        "separator": "\n\n---\n\n"
+      }
+    },
+    {
+      "id": "agent_compare",
+      "type": "agent",
+      "position": { "x": 275, "y": 770 },
+      "data": {
+        "label": "Comparatore Multi-Sito",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo specializzato in analisi comparativa inter-sito. Ricevi le analisi di 2 siti archeologici reali:\n- Al-Khutm (Oman): sito con depositi alluvionali e strutture in pietra\n- Episcopio Portus Romae (Italia): sito con murature e strutture ecclesiastiche\n\nProduci un report comparativo:\n1. **Tabella sinottica**: confronto (cronologia, tipologia US, dimensioni scavo, contesto geografico)\n2. **Analogie**: tecniche costruttive comuni? Tipologie murarie simili?\n3. **Differenze**: contesto climatico, funzione dei siti, materiali da costruzione\n4. **Metodologia**: come la stessa metodologia (pyarchinit) gestisce siti cosi diversi\n5. **Prospettive**: domande di ricerca comparativa Mediterraneo-Golfo Persico\n\nFormato: report markdown con tabelle. Italiano.",
+        "temperature": 0.5,
+        "maxTokens": 3000,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 275, "y": 960 },
+      "data": {
+        "label": "Report Comparativo",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e-ik-dk", "source": "input_ktm", "target": "db_ktm_us" },
+    { "id": "e-ie-de", "source": "input_epi", "target": "db_epi_us" },
+    { "id": "e-dk-ak", "source": "db_ktm_us", "target": "agent_ktm" },
+    { "id": "e-de-ae", "source": "db_epi_us", "target": "agent_epi" },
+    { "id": "e-ak-agg", "source": "agent_ktm", "target": "agg_all" },
+    { "id": "e-ae-agg", "source": "agent_epi", "target": "agg_all" },
+    { "id": "e-agg-cmp", "source": "agg_all", "target": "agent_compare" },
+    { "id": "e-cmp-out", "source": "agent_compare", "target": "output_1" }
+  ]
+}

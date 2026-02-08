@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Argomento Report",
+        "inputType": "text",
+        "defaultValue": "Genera un report giornaliero sulle vendite e-commerce: totale ordini, fatturato, prodotti top 5"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Genera Report",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un analista business. Genera un report giornaliero sintetico basato sull'argomento fornito. Usa emoji per le sezioni:\n\n📊 Metriche principali\n🏆 Top 5 prodotti\n📈 Trend\n⚠️ Alert\n\nFormatto conciso, adatto a Telegram (max 300 parole). Usa bold con *testo* per evidenziare.",
+        "temperature": 0.5,
+        "maxTokens": 1024
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 100, "y": 420 },
+      "data": {
+        "label": "Invia su Telegram",
+        "tool": "telegram_bot",
+        "config": {
+          "operation": "send_message",
+          "chat_id": "",
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 600, "y": 420 },
+      "data": {
+        "label": "Salva Report",
+        "tool": "file_manager",
+        "operation": "write_file",
+        "destination": "./output/daily-report.md"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Risultati",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 350, "y": 750 },
+      "data": {
+        "label": "Stato Invio",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}

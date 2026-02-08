@@ -1,0 +1,102 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Buffer US Episcopio",
+        "inputType": "text",
+        "defaultValue": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite"
+      }
+    },
+    {
+      "id": "gis_buffer",
+      "type": "tool",
+      "position": { "x": 150, "y": 220 },
+      "data": {
+        "label": "Buffer 5m US",
+        "tool": "gis_tool",
+        "operation": "buffer",
+        "layer": "pyunitastratigrafiche",
+        "distance": 5
+      }
+    },
+    {
+      "id": "gis_reproject",
+      "type": "tool",
+      "position": { "x": 550, "y": 220 },
+      "data": {
+        "label": "Riproietta in WGS84",
+        "tool": "gis_tool",
+        "operation": "reproject",
+        "layer": "pyunitastratigrafiche",
+        "target_crs": "EPSG:4326"
+      }
+    },
+    {
+      "id": "delay_ops",
+      "type": "delay",
+      "position": { "x": 350, "y": 400 },
+      "data": {
+        "label": "Attendi Elaborazione",
+        "delaySeconds": 2
+      }
+    },
+    {
+      "id": "db_us_data",
+      "type": "tool",
+      "position": { "x": 350, "y": 550 },
+      "data": {
+        "label": "Query US Attributi",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite",
+        "queryTemplate": "SELECT us, d_stratigrafica, d_interpretativa, area FROM us_table ORDER BY CAST(us AS INTEGER)"
+      }
+    },
+    {
+      "id": "agg_all",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 720 },
+      "data": {
+        "label": "Assembla GIS + DB",
+        "strategy": "concatenate",
+        "separator": "\n\n=== SEZIONE ===\n\n"
+      }
+    },
+    {
+      "id": "agent_spatial",
+      "type": "agent",
+      "position": { "x": 350, "y": 890 },
+      "data": {
+        "label": "Analista Spaziale",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo GIS expert. Ricevi:\n1. Risultato del buffer a 5m delle US (area di rispetto)\n2. Riproiezione in WGS84\n3. Dati attributi delle US dal database\n\nIl sito e Episcopio Portus Romae (Fiumicino). Le US hanno geometrie MultiPolygon in SRID 3004.\n\nProduci un report:\n1. **Operazioni GIS eseguite**: buffer (perche 5m? area di rispetto scavo), riproiezione (da 3004 a 4326 per webmapping)\n2. **Correlazione spazio-attributi**: quali US hanno le geometrie piu grandi? Corrispondono a Wall, Masonry?\n3. **Gestione CRS**: SRID 3004 (Monte Mario) → 4326 (WGS84), implicazioni per la precisione\n4. **Pianificazione scavo**: come usare buffer e analisi spaziale per pianificare le prossime campagne\n\nFormato: report markdown professionale. Italiano.",
+        "temperature": 0.4,
+        "maxTokens": 2500,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 350, "y": 1080 },
+      "data": {
+        "label": "Report Analisi Spaziale",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-buf", "source": "node_1", "target": "gis_buffer" },
+    { "id": "e1-repr", "source": "node_1", "target": "gis_reproject" },
+    { "id": "e-buf-delay", "source": "gis_buffer", "target": "delay_ops" },
+    { "id": "e-repr-delay", "source": "gis_reproject", "target": "delay_ops" },
+    { "id": "e-delay-db", "source": "delay_ops", "target": "db_us_data" },
+    { "id": "e-buf-agg", "source": "gis_buffer", "target": "agg_all" },
+    { "id": "e-repr-agg", "source": "gis_reproject", "target": "agg_all" },
+    { "id": "e-db-agg", "source": "db_us_data", "target": "agg_all" },
+    { "id": "e-agg-agent", "source": "agg_all", "target": "agent_spatial" },
+    { "id": "e-agent-out", "source": "agent_spatial", "target": "output_1" }
+  ]
+}

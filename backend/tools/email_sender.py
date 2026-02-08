@@ -1,4 +1,4 @@
-"""Email sending tool — Gmail, Outlook (Microsoft Graph), or generic SMTP."""
+"""Email sending tool — Resend, Gmail, Outlook (Microsoft Graph), or generic SMTP."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from tools import BaseTool
 
 
 class EmailSenderTool(BaseTool):
-    """Send emails via Gmail API, Microsoft Graph, or SMTP."""
+    """Send emails via Resend, Gmail API, Microsoft Graph, or SMTP."""
 
     name = "email_sender"
-    description = "Send emails via Gmail, Outlook, or SMTP"
+    description = "Send emails via Resend, Gmail, Outlook, or SMTP"
 
     async def execute(self, input_text: str, **kwargs: Any) -> str:
         source = kwargs.get("source", "smtp")
@@ -29,14 +29,60 @@ class EmailSenderTool(BaseTool):
             return "[Error] No email body provided (empty input)."
 
         try:
-            if source == "gmail":
+            if source == "resend":
+                return await self._send_resend(to, subject, body)
+            elif source == "gmail":
                 return await self._send_gmail(to, subject, body)
             elif source == "outlook":
                 return await self._send_outlook(to, subject, body)
             else:
-                return await self._send_smtp(to, subject, body, **kwargs)
+                # Strip keys already extracted as positional args to avoid duplicates
+                smtp_kwargs = {k: v for k, v in kwargs.items() if k not in ("to", "subject", "source")}
+                return await self._send_smtp(to, subject, body, **smtp_kwargs)
         except Exception as e:
             return f"[Email error] {e}"
+
+    async def _send_resend(self, to: str, subject: str, body: str) -> str:
+        """Send via Resend API (https://resend.com). Only needs an API key."""
+        import httpx
+        from config import settings
+
+        api_key = settings.resend_api_key
+        if not api_key:
+            return (
+                "[Error] RESEND_API_KEY non configurata. "
+                "1) Registrati gratis su https://resend.com\n"
+                "2) Crea un API key\n"
+                "3) Aggiungi RESEND_API_KEY=re_xxxx nel file .env"
+            )
+
+        from_addr = settings.resend_from or "Gennaro <onboarding@resend.dev>"
+        recipients = [addr.strip() for addr in to.split(",")]
+
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": from_addr,
+                    "to": recipients,
+                    "subject": subject,
+                    "text": body,
+                },
+            )
+
+        if resp.status_code == 200:
+            return f"Email inviata via Resend a {to}"
+
+        try:
+            err = resp.json()
+            msg = err.get("message", resp.text[:300])
+        except Exception:
+            msg = resp.text[:300]
+        return f"[Error] Resend returned {resp.status_code}: {msg}"
 
     async def _send_gmail(self, to: str, subject: str, body: str) -> str:
         """Send via Gmail API using OAuth2 credentials."""

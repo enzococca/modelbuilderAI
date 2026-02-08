@@ -19,7 +19,9 @@ class DatabaseTool(BaseTool):
     async def execute(self, input_text: str, **kwargs: Any) -> str:
         connection_string = kwargs.get("connection_string", "")
         db_type = kwargs.get("db_type", "") or self._detect_db_type(connection_string)
-        query = self._extract_query(input_text)
+        # Prefer explicit query from workflow config (queryTemplate), fall back to input_text
+        raw_query = kwargs.get("query", "") or input_text
+        query = self._extract_query(raw_query)
 
         if not query.strip():
             return "No query provided."

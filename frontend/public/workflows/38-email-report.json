@@ -1,0 +1,52 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Argomento Report",
+        "inputType": "text",
+        "defaultValue": "Genera un report settimanale sullo stato dello scavo"
+      }
+    },
+    {
+      "id": "agent_writer",
+      "type": "agent",
+      "position": { "x": 350, "y": 200 },
+      "data": {
+        "label": "Scrivi Report",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo. Scrivi un breve report settimanale professionale sullo stato dello scavo. Include: attivita svolte, reperti trovati, problemi riscontrati, piano per la prossima settimana. Max 300 parole. Formato testo semplice.",
+        "temperature": 0.5,
+        "maxTokens": 800
+      }
+    },
+    {
+      "id": "email_send",
+      "type": "tool",
+      "position": { "x": 350, "y": 420 },
+      "data": {
+        "label": "Invia Email Report",
+        "tool": "email_sender",
+        "emailSource": "resend",
+        "emailTo": "enzo.ccc@gmail.com",
+        "emailSubject": "Report Settimanale Scavo - Gennaro"
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Stato Invio",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-agent", "source": "node_1", "target": "agent_writer" },
+    { "id": "e-agent-email", "source": "agent_writer", "target": "email_send" },
+    { "id": "e-email-out", "source": "email_send", "target": "output_1" }
+  ]
+}

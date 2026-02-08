@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 30 },
+      "data": {
+        "label": "API Base URL",
+        "inputType": "text",
+        "defaultValue": "https://httpbin.org"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 300, "y": 170 },
+      "data": {
+        "label": "GET /get",
+        "tool": "http_request",
+        "method": "GET",
+        "urlTemplate": "{input}/get?info=first",
+        "retryCount": 1,
+        "retryDelay": 3,
+        "onError": "skip"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "delay",
+      "position": { "x": 300, "y": 320 },
+      "data": {
+        "label": "Pausa 3s",
+        "delaySeconds": 3
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "tool",
+      "position": { "x": 300, "y": 470 },
+      "data": {
+        "label": "GET /headers",
+        "tool": "http_request",
+        "method": "GET",
+        "urlTemplate": "https://httpbin.org/headers",
+        "retryCount": 1,
+        "retryDelay": 3,
+        "onError": "skip"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "delay",
+      "position": { "x": 300, "y": 620 },
+      "data": {
+        "label": "Pausa 2s",
+        "delaySeconds": 2
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "agent",
+      "position": { "x": 300, "y": 770 },
+      "data": {
+        "label": "Analizza Risposte",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Hai ricevuto le risposte di due chiamate API diverse. Confrontale, descrivi cosa contengono e produci un breve report in italiano.",
+        "temperature": 0.5,
+        "maxTokens": 1024
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "output",
+      "position": { "x": 300, "y": 920 },
+      "data": {
+        "label": "Report API",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" },
+    { "id": "e6-7", "source": "node_6", "target": "node_7" }
+  ]
+}

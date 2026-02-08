@@ -1,0 +1,159 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Scavo Episcopio",
+        "inputType": "text",
+        "defaultValue": "Report completo dello scavo Episcopio Portus Romae"
+      }
+    },
+    {
+      "id": "db_us",
+      "type": "tool",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Query US Episcopio",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite",
+        "queryTemplate": "SELECT sito, area, us, d_stratigrafica, d_interpretativa, descrizione, periodo_iniziale, fase_iniziale, anno_scavo, scavato FROM us_table ORDER BY CAST(us AS INTEGER)"
+      }
+    },
+    {
+      "id": "delay_1",
+      "type": "delay",
+      "position": { "x": 350, "y": 340 },
+      "data": {
+        "label": "Rate Limit (1s)",
+        "delaySeconds": 1
+      }
+    },
+    {
+      "id": "db_inv",
+      "type": "tool",
+      "position": { "x": 350, "y": 470 },
+      "data": {
+        "label": "Query Inventario",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite",
+        "queryTemplate": "SELECT tipo_reperto, COUNT(*) as tot, GROUP_CONCAT(DISTINCT area) as aree, GROUP_CONCAT(DISTINCT stato_conservazione) as stato, GROUP_CONCAT(DISTINCT definizione) as definizioni FROM inventario_materiali_table GROUP BY tipo_reperto ORDER BY tot DESC"
+      }
+    },
+    {
+      "id": "delay_2",
+      "type": "delay",
+      "position": { "x": 350, "y": 620 },
+      "data": {
+        "label": "Rate Limit (1s)",
+        "delaySeconds": 1
+      }
+    },
+    {
+      "id": "db_pottery",
+      "type": "tool",
+      "position": { "x": 350, "y": 750 },
+      "data": {
+        "label": "Query Ceramica",
+        "tool": "database_tool",
+        "connectionString": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite",
+        "queryTemplate": "SELECT fabric, material, form, specific_form, ware, COUNT(*) as tot FROM pottery_table GROUP BY fabric, form ORDER BY tot DESC LIMIT 30"
+      }
+    },
+    {
+      "id": "agg_data",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 910 },
+      "data": {
+        "label": "Assembla Dati Scavo",
+        "strategy": "concatenate",
+        "separator": "\n\n=== SEZIONE ===\n\n"
+      }
+    },
+    {
+      "id": "agent_report",
+      "type": "agent",
+      "position": { "x": 350, "y": 1070 },
+      "data": {
+        "label": "Classificatore Dimensione",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Conta quante US sono presenti nei dati. Rispondi con ESATTAMENTE questa struttura:\nPrima riga: scrivi solo 'GRANDE' se ci sono piu di 30 US, oppure 'PICCOLO' se 30 o meno.\nSeconda riga in poi: riassunto dei dati principali in 3 righe.\n\nESEMPIO:\nGRANDE\nSito Episcopio: 47 US, prevalenza murature e tamponature.\nMateriali: ceramica, laterizi, elementi architettonici.\nCronologia: tardo antico / medievale.",
+        "temperature": 0.1,
+        "maxTokens": 300
+      }
+    },
+    {
+      "id": "switch_size",
+      "type": "switch",
+      "position": { "x": 350, "y": 1230 },
+      "data": {
+        "label": "Dimensione Scavo",
+        "switchType": "keyword",
+        "cases": [
+          { "name": "grande", "value": "GRANDE" },
+          { "name": "piccolo", "value": "PICCOLO" }
+        ]
+      }
+    },
+    {
+      "id": "agent_detailed",
+      "type": "agent",
+      "position": { "x": 100, "y": 1400 },
+      "data": {
+        "label": "Report Dettagliato",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo senior. Lo scavo Episcopio Portus Romae e GRANDE (>30 US). Produci una relazione DETTAGLIATA basata sui dati reali:\n\n1. **Introduzione**: Episcopio di Porto (Fiumicino), contesto portuale romano\n2. **Stratigrafia**: descrizione per area e fase (Wall, Threshold, Masonry, Infill Wall)\n3. **Materiali**: analisi per categoria con quantificazioni\n4. **Cronologia**: periodizzazione (romano imperiale → tardo antico → medievale)\n5. **Interpretazione**: funzione del sito (episcopio, strutture portuali)\n6. **Conclusioni e prospettive**\n\nFormato accademico, markdown con tabelle. Italiano. Minimo 1000 parole.",
+        "temperature": 0.5,
+        "maxTokens": 4096,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "agent_summary",
+      "type": "agent",
+      "position": { "x": 600, "y": 1400 },
+      "data": {
+        "label": "Report Sintetico",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Sei un archeologo. Lo scavo e PICCOLO. Produci una relazione SINTETICA:\n1. Localizzazione e contesto\n2. Dati principali: US, materiali, cronologia\n3. Interpretazione\n4. Conclusioni\nMax 500 parole. Italiano.",
+        "temperature": 0.4,
+        "maxTokens": 1500
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 100, "y": 1600 },
+      "data": {
+        "label": "Relazione Dettagliata",
+        "outputFormat": "markdown"
+      }
+    },
+    {
+      "id": "output_2",
+      "type": "output",
+      "position": { "x": 600, "y": 1600 },
+      "data": {
+        "label": "Relazione Sintetica",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-us", "source": "node_1", "target": "db_us" },
+    { "id": "e-us-d1", "source": "db_us", "target": "delay_1" },
+    { "id": "e-d1-inv", "source": "delay_1", "target": "db_inv" },
+    { "id": "e-inv-d2", "source": "db_inv", "target": "delay_2" },
+    { "id": "e-d2-pot", "source": "delay_2", "target": "db_pottery" },
+    { "id": "e-us-agg", "source": "db_us", "target": "agg_data" },
+    { "id": "e-inv-agg", "source": "db_inv", "target": "agg_data" },
+    { "id": "e-pot-agg", "source": "db_pottery", "target": "agg_data" },
+    { "id": "e-agg-rep", "source": "agg_data", "target": "agent_report" },
+    { "id": "e-rep-sw", "source": "agent_report", "target": "switch_size" },
+    { "id": "e-sw-det", "source": "switch_size", "target": "agent_detailed", "label": "grande" },
+    { "id": "e-sw-sum", "source": "switch_size", "target": "agent_summary", "label": "piccolo" },
+    { "id": "e-det-o1", "source": "agent_detailed", "target": "output_1" },
+    { "id": "e-sum-o2", "source": "agent_summary", "target": "output_2" }
+  ]
+}

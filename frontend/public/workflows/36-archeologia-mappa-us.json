@@ -1,0 +1,91 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Mappa US Episcopio",
+        "inputType": "text",
+        "defaultValue": "/Users/enzo/pyarchinit/pyarchinit_DB_folder/Episcopio_Portus_Romae_LMU.sqlite"
+      }
+    },
+    {
+      "id": "gis_info",
+      "type": "tool",
+      "position": { "x": 100, "y": 220 },
+      "data": {
+        "label": "Info Geometrie US",
+        "tool": "gis_tool",
+        "operation": "info",
+        "layer": "pyunitastratigrafiche"
+      }
+    },
+    {
+      "id": "gis_map",
+      "type": "tool",
+      "position": { "x": 350, "y": 220 },
+      "data": {
+        "label": "Mappa Interattiva US",
+        "tool": "gis_tool",
+        "operation": "map",
+        "layer": "pyunitastratigrafiche",
+        "title": "US Episcopio Portus Romae (SRID 3004)"
+      }
+    },
+    {
+      "id": "gis_analysis",
+      "type": "tool",
+      "position": { "x": 600, "y": 220 },
+      "data": {
+        "label": "Analisi Vettoriale",
+        "tool": "gis_tool",
+        "operation": "vector_analysis",
+        "layer": "pyunitastratigrafiche",
+        "analysis_type": "summary"
+      }
+    },
+    {
+      "id": "agg_gis",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 420 },
+      "data": {
+        "label": "Assembla Dati GIS",
+        "strategy": "concatenate",
+        "separator": "\n\n---\n\n"
+      }
+    },
+    {
+      "id": "agent_gis",
+      "type": "agent",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Archeologo GIS",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un archeologo specializzato in GIS. Ricevi dati spaziali REALI delle Unita Stratigrafiche del sito Episcopio Portus Romae (Fiumicino, Italia) dal database SpatiaLite di PyArchInit.\n\nI dati includono: geometrie MultiPolygon in SRID 3004 (Monte Mario / Italy zone 2), 47 US con poligoni, statistiche areali, centroidi.\n\nProduci un report GIS che includa:\n1. **Overview spaziale**: CRS, numero features, tipi geometrici, estensione (bounds)\n2. **Analisi areale**: distribuzione delle aree delle US (min, max, media), quali sono le US piu grandi?\n3. **Distribuzione spaziale**: concentrazioni, pattern, orientamenti\n4. **Interpretazione archeologica**: cosa ci dice la distribuzione spaziale sulla organizzazione del sito?\n5. **Raccomandazioni GIS**: analisi ulteriori (buffer, overlay, density map) suggerite\n\nI risultati includono una mappa interattiva GeoJSON che l'utente puo esplorare.\n\nFormato: report markdown. Italiano.",
+        "temperature": 0.4,
+        "maxTokens": 2500,
+        "fallbackModel": "gpt-4o"
+      }
+    },
+    {
+      "id": "output_1",
+      "type": "output",
+      "position": { "x": 350, "y": 800 },
+      "data": {
+        "label": "Report GIS + Mappa",
+        "outputFormat": "map"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-info", "source": "node_1", "target": "gis_info" },
+    { "id": "e1-map", "source": "node_1", "target": "gis_map" },
+    { "id": "e1-anal", "source": "node_1", "target": "gis_analysis" },
+    { "id": "e-info-agg", "source": "gis_info", "target": "agg_gis" },
+    { "id": "e-map-agg", "source": "gis_map", "target": "agg_gis" },
+    { "id": "e-anal-agg", "source": "gis_analysis", "target": "agg_gis" },
+    { "id": "e-agg-agent", "source": "agg_gis", "target": "agent_gis" },
+    { "id": "e-agent-out", "source": "agent_gis", "target": "output_1" }
+  ]
+}

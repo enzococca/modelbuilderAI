@@ -18,6 +18,9 @@ class NodeType(str, Enum):
     AGGREGATOR = "aggregator"
     META_AGENT = "meta_agent"
     CHUNKER = "chunker"
+    DELAY = "delay"
+    SWITCH = "switch"
+    VALIDATOR = "validator"
 
 
 class PipelinePattern(str, Enum):

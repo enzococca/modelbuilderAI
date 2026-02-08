@@ -17,7 +17,11 @@ async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
     ensure_dirs(settings)
     await init_db()
+    # Start the scheduler background service
+    from scheduler.scheduler import scheduler
+    await scheduler.start()
     yield
+    await scheduler.stop()
 
 
 app = FastAPI(
@@ -43,6 +47,7 @@ from api.projects import router as projects_router
 from api.files import router as files_router
 from api.analytics import router as analytics_router
 from api.settings import router as settings_router
+from api.scheduler import router as scheduler_router
 from websocket.handlers import router as ws_router
 
 app.include_router(chat_router, prefix="/api")
@@ -52,6 +57,7 @@ app.include_router(projects_router, prefix="/api")
 app.include_router(files_router, prefix="/api")
 app.include_router(analytics_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(scheduler_router, prefix="/api")
 app.include_router(ws_router)
 
 

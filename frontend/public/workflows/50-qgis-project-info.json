@@ -1,0 +1,78 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Percorso Progetto QGIS",
+        "inputType": "text",
+        "defaultValue": "/path/to/progetto.qgz"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "tool",
+      "position": { "x": 100, "y": 220 },
+      "data": {
+        "label": "Info Progetto",
+        "tool": "qgis_project",
+        "config": {
+          "operation": "project_info",
+          "project_path": ""
+        }
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "tool",
+      "position": { "x": 600, "y": 220 },
+      "data": {
+        "label": "Lista Layer",
+        "tool": "qgis_project",
+        "config": {
+          "operation": "list_layers",
+          "project_path": ""
+        }
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 420 },
+      "data": {
+        "label": "Unisci Info",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "agent",
+      "position": { "x": 350, "y": 600 },
+      "data": {
+        "label": "Analista GIS",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "Sei un esperto GIS. Ricevi informazioni su un progetto QGIS: metadati del progetto (CRS, versione, extent) e lista dei layer.\n\nAnalizza e produci:\n1. **Panoramica Progetto**: CRS usato, versione QGIS, estensione geografica\n2. **Inventario Layer**: lista organizzata per tipo (vettoriale/raster), sorgente dati, geometria\n3. **Valutazione**: coerenza CRS tra layer, completezza dati, organizzazione\n4. **Suggerimenti**: miglioramenti al progetto, layer mancanti, best practice\n\nFormato: report markdown con tabelle. Italiano.",
+        "temperature": 0.4,
+        "maxTokens": 2000
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "output",
+      "position": { "x": 350, "y": 800 },
+      "data": {
+        "label": "Report Progetto QGIS",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e1-3", "source": "node_1", "target": "node_3" },
+    { "id": "e2-4", "source": "node_2", "target": "node_4" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4" },
+    { "id": "e4-5", "source": "node_4", "target": "node_5" },
+    { "id": "e5-6", "source": "node_5", "target": "node_6" }
+  ]
+}

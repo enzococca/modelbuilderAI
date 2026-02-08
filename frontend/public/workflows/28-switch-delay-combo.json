@@ -1,0 +1,121 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 350, "y": 30 },
+      "data": {
+        "label": "Ticket Supporto",
+        "inputType": "text",
+        "defaultValue": "URGENTE: Il server di produzione è down da 30 minuti, i clienti non possono accedere al servizio. Errore 503 su tutti gli endpoint."
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 350, "y": 180 },
+      "data": {
+        "label": "Classificatore",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Classifica il ticket di supporto in base all'urgenza. Rispondi con UNA SOLA parola:\n- \"critico\" se il sistema è down o ci sono perdite di dati\n- \"alto\" se è un bug che blocca il lavoro\n- \"normale\" per tutto il resto\nRispondi SOLO con la parola di classificazione.",
+        "temperature": 0.1,
+        "maxTokens": 10,
+        "setVariable": "priorita"
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "switch",
+      "position": { "x": 350, "y": 350 },
+      "data": {
+        "label": "Smista per Priorità",
+        "switchType": "keyword"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "agent",
+      "position": { "x": 80, "y": 530 },
+      "data": {
+        "label": "Risposta Critica",
+        "model": "claude-sonnet-4-5-20250929",
+        "systemPrompt": "PRIORITÀ CRITICA. Sei un ingegnere senior di emergenza. Il sistema è in stato critico.\n1. Diagnosi immediata del problema\n2. Azioni correttive urgenti (step-by-step)\n3. Comunicazione per il cliente\n4. Piano di post-mortem\nRispondi in italiano, formato strutturato.",
+        "temperature": 0.2,
+        "maxTokens": 2048
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "delay",
+      "position": { "x": 350, "y": 530 },
+      "data": {
+        "label": "Coda Priorità Alta (2s)",
+        "delaySeconds": 2
+      }
+    },
+    {
+      "id": "node_6",
+      "type": "delay",
+      "position": { "x": 620, "y": 530 },
+      "data": {
+        "label": "Coda Normale (5s)",
+        "delaySeconds": 5
+      }
+    },
+    {
+      "id": "node_7",
+      "type": "agent",
+      "position": { "x": 350, "y": 680 },
+      "data": {
+        "label": "Risposta Alta",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Priorità ALTA. Analizza il bug riportato e fornisci:\n1. Possibili cause\n2. Workaround temporaneo\n3. Soluzione definitiva suggerita\nRispondi in italiano.",
+        "temperature": 0.4,
+        "maxTokens": 1024
+      }
+    },
+    {
+      "id": "node_8",
+      "type": "agent",
+      "position": { "x": 620, "y": 680 },
+      "data": {
+        "label": "Risposta Normale",
+        "model": "claude-haiku-4-5-20251001",
+        "systemPrompt": "Rispondi al ticket di supporto in modo cortese e utile. Fornisci istruzioni chiare per risolvere il problema. Rispondi in italiano.",
+        "temperature": 0.7,
+        "maxTokens": 1024
+      }
+    },
+    {
+      "id": "node_9",
+      "type": "aggregator",
+      "position": { "x": 350, "y": 850 },
+      "data": {
+        "label": "Raccogli Risposta",
+        "strategy": "concatenate"
+      }
+    },
+    {
+      "id": "node_10",
+      "type": "output",
+      "position": { "x": 350, "y": 1000 },
+      "data": {
+        "label": "Risposta Ticket",
+        "outputFormat": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" },
+    { "id": "e3-4", "source": "node_3", "target": "node_4", "label": "critico" },
+    { "id": "e3-5", "source": "node_3", "target": "node_5", "label": "alto" },
+    { "id": "e3-6", "source": "node_3", "target": "node_6", "label": "default" },
+    { "id": "e4-9", "source": "node_4", "target": "node_9" },
+    { "id": "e5-7", "source": "node_5", "target": "node_7" },
+    { "id": "e6-8", "source": "node_6", "target": "node_8" },
+    { "id": "e7-9", "source": "node_7", "target": "node_9" },
+    { "id": "e8-9", "source": "node_8", "target": "node_9" },
+    { "id": "e9-10", "source": "node_9", "target": "node_10" }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "nodes": [
+    {
+      "id": "node_1",
+      "type": "input",
+      "position": { "x": 300, "y": 50 },
+      "data": { "label": "Testo da analizzare", "inputType": "text", "defaultValue": "Il nuovo ristorante in centro ha un'atmosfera fantastica, ma il servizio era lento e il cibo mediocre. Non ci tornerei." }
+    },
+    {
+      "id": "node_2",
+      "type": "agent",
+      "position": { "x": 300, "y": 200 },
+      "data": { "label": "Analisi Sentiment", "model": "claude-sonnet-4-5-20250929", "systemPrompt": "Sei un analista di sentiment. Analizza il testo ricevuto e rispondi con:\n1. Sentiment complessivo (positivo/negativo/neutro/misto)\n2. Score da 1 a 10\n3. Aspetti positivi e negativi identificati\n4. Tono emotivo dominante", "temperature": 0.3, "maxTokens": 1024 }
+    },
+    {
+      "id": "node_3",
+      "type": "output",
+      "position": { "x": 300, "y": 380 },
+      "data": { "label": "Risultato Sentiment", "outputFormat": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1-2", "source": "node_1", "target": "node_2" },
+    { "id": "e2-3", "source": "node_2", "target": "node_3" }
+  ]
+}

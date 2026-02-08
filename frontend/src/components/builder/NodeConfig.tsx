@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { X, Bot, Wrench, GitBranch, FileInput, FileOutput, RefreshCw, Layers, Upload, File, Boxes, Scissors } from 'lucide-react';
+import { X, Bot, Wrench, GitBranch, FileInput, FileOutput, RefreshCw, Layers, Upload, File, Boxes, Scissors, Clock, GitFork, ShieldCheck } from 'lucide-react';
 import type { Node } from '@xyflow/react';
 import { uploadFile } from '@/services/api';
 
@@ -23,6 +23,9 @@ const nodeIcons: Record<string, { icon: typeof Bot; color: string; label: string
   aggregator: { icon: Layers, color: 'pink', label: 'Aggregator' },
   meta_agent: { icon: Boxes, color: 'indigo', label: 'Meta-Agent' },
   chunker: { icon: Scissors, color: 'teal', label: 'Chunker' },
+  delay: { icon: Clock, color: 'amber', label: 'Delay' },
+  switch: { icon: GitFork, color: 'rose', label: 'Switch' },
+  validator: { icon: ShieldCheck, color: 'emerald', label: 'Validator' },
 };
 
 export function NodeConfig({ node, onClose, onUpdate }: Props) {
@@ -114,6 +117,17 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                   <option value="o1">o1</option>
                   <option value="o3-mini">o3-mini</option>
                 </optgroup>
+                <optgroup label="Local (Ollama)">
+                  <option value="ollama:llama3.3">Llama 3.3</option>
+                  <option value="ollama:mistral">Mistral</option>
+                  <option value="ollama:codellama">CodeLlama</option>
+                  <option value="ollama:gemma2">Gemma 2</option>
+                  <option value="ollama:phi3">Phi-3</option>
+                  <option value="ollama:qwen2.5">Qwen 2.5</option>
+                </optgroup>
+                <optgroup label="LM Studio">
+                  <option value="lmstudio:default">LM Studio (default)</option>
+                </optgroup>
               </select>
             </div>
             <div>
@@ -151,7 +165,7 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
             <div>
               <label className={labelStyles}>Tools</label>
               <div className="space-y-1">
-                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool', 'file_search', 'email_search', 'project_analyzer', 'email_sender'].map(tool => {
+                {['web_search', 'code_executor', 'file_processor', 'database_tool', 'image_tool', 'ml_pipeline', 'gis_tool', 'file_search', 'email_search', 'project_analyzer', 'email_sender', 'web_scraper', 'file_manager', 'http_request', 'text_transformer', 'notifier', 'json_parser', 'telegram_bot', 'whatsapp', 'pyarchinit_tool', 'qgis_project'].map(tool => {
                   const tools = (data.tools as string[]) ?? [];
                   return (
                     <label key={tool} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
@@ -172,6 +186,24 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 })}
               </div>
             </div>
+            <div>
+              <label className={labelStyles}>Fallback Model</label>
+              <select
+                value={(data.fallbackModel as string) ?? ''}
+                onChange={e => update('fallbackModel', e.target.value)}
+                className={selectStyles}
+              >
+                <option value="">Nessuno</option>
+                <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="ollama:llama3.3">Ollama: Llama 3.3</option>
+                <option value="ollama:mistral">Ollama: Mistral</option>
+                <option value="lmstudio:default">LM Studio</option>
+              </select>
+              <p className="text-[10px] text-gray-600 mt-1">Usato se il modello principale fallisce.</p>
+            </div>
           </>
         )}
 
@@ -191,8 +223,58 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="email">Email</option>
                 <option value="api">API Endpoint</option>
                 <option value="variable">Variable</option>
+                <option value="database">Database Query</option>
               </select>
             </div>
+
+            {/* Database config — shown when inputType is 'database' */}
+            {(data.inputType as string) === 'database' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Database Type</label>
+                  <select
+                    value={(data.dbType as string) ?? 'sqlite'}
+                    onChange={e => update('dbType', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="sqlite">SQLite</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="mysql">MySQL</option>
+                    <option value="mongodb">MongoDB</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Connection String</label>
+                  <input
+                    value={(data.connectionString as string) ?? ''}
+                    onChange={e => update('connectionString', e.target.value)}
+                    placeholder={
+                      (data.dbType as string) === 'postgresql' ? 'postgresql://user:pass@localhost:5432/mydb'
+                      : (data.dbType as string) === 'mysql' ? 'mysql://user:pass@localhost:3306/mydb'
+                      : (data.dbType as string) === 'mongodb' ? 'mongodb://localhost:27017/mydb'
+                      : 'data/db/gennaro.db'
+                    }
+                    className={inputStyles}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>
+                    {(data.dbType as string) === 'mongodb' ? 'Query (MongoDB)' : 'Query SQL'}
+                  </label>
+                  <textarea
+                    value={(data.query as string) ?? ''}
+                    onChange={e => update('query', e.target.value)}
+                    rows={3}
+                    placeholder={
+                      (data.dbType as string) === 'mongodb'
+                        ? 'db.collection.find({"field": "value"})'
+                        : 'SELECT * FROM table_name LIMIT 10'
+                    }
+                    className={`${inputStyles} resize-none font-mono text-xs`}
+                  />
+                </div>
+              </>
+            )}
 
             {/* File drop zone — shown when inputType is 'file' */}
             {(data.inputType as string) === 'file' && (
@@ -336,6 +418,16 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <option value="email_search">Email Search</option>
                 <option value="project_analyzer">Project Analyzer</option>
                 <option value="email_sender">Email Sender</option>
+                <option value="web_scraper">Web Scraper</option>
+                <option value="file_manager">File Manager</option>
+                <option value="http_request">HTTP Request</option>
+                <option value="text_transformer">Text Transformer</option>
+                <option value="notifier">Notifier</option>
+                <option value="json_parser">JSON Parser</option>
+                <option value="telegram_bot">Telegram Bot</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="pyarchinit_tool">PyArchInit</option>
+                <option value="qgis_project">QGIS Project</option>
               </select>
             </div>
 
@@ -375,6 +467,17 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                     onChange={e => update('timeout', parseInt(e.target.value, 10))}
                     className={inputStyles}
                   />
+                </div>
+                <div>
+                  <label className={labelStyles}>Code Template</label>
+                  <textarea
+                    value={(data.codeTemplate as string) ?? ''}
+                    onChange={e => update('codeTemplate', e.target.value)}
+                    rows={4}
+                    placeholder={'Codice Python con {input} come placeholder per i dati.\nEs: import plotly...\\ndata = \"\"\"{input}\"\"\"'}
+                    className={`${inputStyles} resize-none font-mono text-xs`}
+                  />
+                  <p className="text-[10px] text-gray-500 mt-0.5">Usa {'{input}'} per iniettare i dati dal nodo precedente. Supporta: matplotlib, plotly, pandas, numpy, sklearn.</p>
                 </div>
               </>
             )}
@@ -609,6 +712,16 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                     </select>
                   </div>
                 )}
+                <div>
+                  <label className={labelStyles}>Layer Name</label>
+                  <input
+                    value={(data.layer as string) ?? ''}
+                    onChange={e => update('layer', e.target.value)}
+                    placeholder="es. pyunitastratigrafiche (vuoto = primo layer)"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Per GeoPackage/SQLite con piu layer.</p>
+                </div>
               </>
             )}
 
@@ -788,10 +901,11 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                 <div>
                   <label className={labelStyles}>Send via</label>
                   <select
-                    value={(data.emailSource as string) ?? 'smtp'}
+                    value={(data.emailSource as string) ?? 'resend'}
                     onChange={e => update('emailSource', e.target.value)}
                     className={selectStyles}
                   >
+                    <option value="resend">Resend (consigliato, gratis)</option>
                     <option value="smtp">SMTP (generico)</option>
                     <option value="gmail">Gmail (API)</option>
                     <option value="outlook">Outlook (Microsoft Graph)</option>
@@ -869,9 +983,648 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
                     </div>
                   </>
                 )}
-                {(data.emailSource as string) !== 'smtp' && (
+                {(data.emailSource as string) === 'resend' && (
+                  <p className="text-xs text-gray-500">Configura RESEND_API_KEY nel .env. Gratis: 100 email/giorno su resend.com</p>
+                )}
+                {(data.emailSource as string) !== 'smtp' && (data.emailSource as string) !== 'resend' && (
                   <p className="text-xs text-gray-500">Credenziali configurabili in Settings (.env).</p>
                 )}
+              </>
+            )}
+
+            {/* HTTP Request config */}
+            {(data.tool as string) === 'http_request' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Method</label>
+                  <select
+                    value={(data.method as string) ?? 'GET'}
+                    onChange={e => update('method', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="PATCH">PATCH</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>URL Template</label>
+                  <input
+                    value={(data.urlTemplate as string) ?? '{input}'}
+                    onChange={e => update('urlTemplate', e.target.value)}
+                    placeholder="https://api.example.com/data o {input}"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Usa {'{input}'} per inserire il dato dal nodo precedente.</p>
+                </div>
+                <div>
+                  <label className={labelStyles}>Headers (JSON)</label>
+                  <input
+                    value={(data.headers as string) ?? ''}
+                    onChange={e => update('headers', e.target.value)}
+                    placeholder='{"Authorization": "Bearer xxx"}'
+                    className={inputStyles}
+                  />
+                </div>
+                {['POST', 'PUT', 'PATCH'].includes((data.method as string) ?? '') && (
+                  <div>
+                    <label className={labelStyles}>Body (JSON)</label>
+                    <textarea
+                      value={(data.body as string) ?? ''}
+                      onChange={e => update('body', e.target.value)}
+                      placeholder='{"key": "{input}"}'
+                      rows={3}
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyles}>Auth Type</label>
+                  <select
+                    value={(data.authType as string) ?? 'none'}
+                    onChange={e => update('authType', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="none">None</option>
+                    <option value="bearer">Bearer Token</option>
+                    <option value="basic">Basic Auth</option>
+                  </select>
+                </div>
+                {(data.authType as string) !== 'none' && (data.authType as string) && (
+                  <div>
+                    <label className={labelStyles}>
+                      {(data.authType as string) === 'basic' ? 'Credentials (user:pass)' : 'Token'}
+                    </label>
+                    <input
+                      type="password"
+                      value={(data.authToken as string) ?? ''}
+                      onChange={e => update('authToken', e.target.value)}
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyles}>Timeout (sec)</label>
+                  <input
+                    type="number" min={1} max={120}
+                    value={(data.timeout as number) ?? 15}
+                    onChange={e => update('timeout', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Text Transformer config */}
+            {(data.tool as string) === 'text_transformer' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'trim'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="trim">Trim</option>
+                    <option value="upper">Uppercase</option>
+                    <option value="lower">Lowercase</option>
+                    <option value="regex_replace">Regex Replace</option>
+                    <option value="regex_extract">Regex Extract</option>
+                    <option value="split">Split</option>
+                    <option value="join">Join</option>
+                    <option value="template">Template</option>
+                    <option value="truncate">Truncate</option>
+                    <option value="count">Count</option>
+                    <option value="remove_html">Remove HTML</option>
+                    <option value="sort_lines">Sort Lines</option>
+                    <option value="unique_lines">Unique Lines</option>
+                    <option value="number_lines">Number Lines</option>
+                  </select>
+                </div>
+                {((data.operation as string) === 'regex_replace' || (data.operation as string) === 'regex_extract') && (
+                  <div>
+                    <label className={labelStyles}>Pattern (regex)</label>
+                    <input
+                      value={(data.pattern as string) ?? ''}
+                      onChange={e => update('pattern', e.target.value)}
+                      placeholder="es. \b\w+@\w+\.\w+\b"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'regex_replace' && (
+                  <div>
+                    <label className={labelStyles}>Replacement</label>
+                    <input
+                      value={(data.replacement as string) ?? ''}
+                      onChange={e => update('replacement', e.target.value)}
+                      placeholder="testo sostitutivo"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {((data.operation as string) === 'split' || (data.operation as string) === 'join') && (
+                  <div>
+                    <label className={labelStyles}>Separator</label>
+                    <input
+                      value={(data.separator as string) ?? '\\n'}
+                      onChange={e => update('separator', e.target.value)}
+                      placeholder="\n, \t, ;, ,"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'template' && (
+                  <div>
+                    <label className={labelStyles}>Template</label>
+                    <textarea
+                      value={(data.template as string) ?? ''}
+                      onChange={e => update('template', e.target.value)}
+                      placeholder="Risultato: {input} ({word_count} parole)"
+                      rows={3}
+                      className={inputStyles}
+                    />
+                    <p className="text-[10px] text-gray-600 mt-1">Variabili: {'{input}'}, {'{line_1}'}, {'{word_count}'}, {'{char_count}'}</p>
+                  </div>
+                )}
+                {(data.operation as string) === 'truncate' && (
+                  <div>
+                    <label className={labelStyles}>Max Length</label>
+                    <input
+                      type="number" min={10}
+                      value={(data.maxLength as number) ?? 500}
+                      onChange={e => update('maxLength', parseInt(e.target.value, 10))}
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Notifier config */}
+            {(data.tool as string) === 'notifier' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Channel</label>
+                  <select
+                    value={(data.channel as string) ?? 'webhook'}
+                    onChange={e => update('channel', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="webhook">Generic Webhook</option>
+                    <option value="slack">Slack</option>
+                    <option value="discord">Discord</option>
+                    <option value="telegram">Telegram</option>
+                  </select>
+                </div>
+                {((data.channel as string) === 'webhook' || (data.channel as string) === 'slack' || (data.channel as string) === 'discord') && (
+                  <div>
+                    <label className={labelStyles}>Webhook URL</label>
+                    <input
+                      value={(data.webhookUrl as string) ?? ''}
+                      onChange={e => update('webhookUrl', e.target.value)}
+                      placeholder="https://hooks.slack.com/services/..."
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.channel as string) === 'telegram' && (
+                  <>
+                    <div>
+                      <label className={labelStyles}>Bot Token</label>
+                      <input
+                        type="password"
+                        value={(data.botToken as string) ?? ''}
+                        onChange={e => update('botToken', e.target.value)}
+                        placeholder="123456:ABC-DEF..."
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Chat ID</label>
+                      <input
+                        value={(data.chatId as string) ?? ''}
+                        onChange={e => update('chatId', e.target.value)}
+                        placeholder="-100123456789"
+                        className={inputStyles}
+                      />
+                    </div>
+                  </>
+                )}
+                <p className="text-xs text-gray-500">Input: il messaggio da inviare.</p>
+              </>
+            )}
+
+            {/* JSON Parser config */}
+            {(data.tool as string) === 'json_parser' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'extract'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="extract">Extract (dot path)</option>
+                    <option value="keys">List Keys</option>
+                    <option value="filter">Filter Array</option>
+                    <option value="flatten">Flatten</option>
+                    <option value="to_csv">Convert to CSV</option>
+                    <option value="validate">Validate</option>
+                    <option value="pretty">Pretty Print</option>
+                    <option value="minify">Minify</option>
+                    <option value="count">Count</option>
+                  </select>
+                </div>
+                {(data.operation as string) === 'extract' && (
+                  <div>
+                    <label className={labelStyles}>Path (dot notation)</label>
+                    <input
+                      value={(data.path as string) ?? ''}
+                      onChange={e => update('path', e.target.value)}
+                      placeholder="es. data.items[0].name"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'filter' && (
+                  <>
+                    <div>
+                      <label className={labelStyles}>Filter Field</label>
+                      <input
+                        value={(data.filterField as string) ?? ''}
+                        onChange={e => update('filterField', e.target.value)}
+                        placeholder="es. status"
+                        className={inputStyles}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelStyles}>Filter Value</label>
+                      <input
+                        value={(data.filterValue as string) ?? ''}
+                        onChange={e => update('filterValue', e.target.value)}
+                        placeholder="es. active"
+                        className={inputStyles}
+                      />
+                    </div>
+                  </>
+                )}
+                <p className="text-xs text-gray-500">Input: stringa JSON dal nodo precedente.</p>
+              </>
+            )}
+
+            {/* Web Scraper config */}
+            {(data.tool as string) === 'web_scraper' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'extract_text'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="extract_text">Extract Text</option>
+                    <option value="extract_links">Extract Links</option>
+                    <option value="extract_tables">Extract Tables</option>
+                    <option value="extract_structured">CSS Selector</option>
+                  </select>
+                </div>
+                {(data.operation as string) === 'extract_structured' && (
+                  <div>
+                    <label className={labelStyles}>CSS Selector</label>
+                    <input
+                      value={(data.cssSelector as string) ?? ''}
+                      onChange={e => update('cssSelector', e.target.value)}
+                      placeholder="es. h2.title, div.content p, #main a"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyles}>Timeout (sec)</label>
+                  <input
+                    type="number"
+                    min={1} max={60}
+                    value={(data.timeout as number) ?? 15}
+                    onChange={e => update('timeout', parseInt(e.target.value, 10))}
+                    className={inputStyles}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">Input: URL della pagina da scrappare.</p>
+              </>
+            )}
+
+            {/* File Manager config */}
+            {(data.tool as string) === 'file_manager' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'list'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="list">List Directory</option>
+                    <option value="create_folder">Create Folder</option>
+                    <option value="write_file">Write File</option>
+                    <option value="read_file">Read File</option>
+                    <option value="copy">Copy</option>
+                    <option value="move">Move / Rename</option>
+                    <option value="delete">Delete</option>
+                    <option value="info">File Info</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Base Directory (sandbox)</label>
+                  <input
+                    value={(data.baseDir as string) ?? ''}
+                    onChange={e => update('baseDir', e.target.value)}
+                    placeholder="es. /Users/enzo/Documents (vuoto = nessun limite)"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Se impostato, limita le operazioni a questa cartella.</p>
+                </div>
+                {((data.operation as string) === 'copy' || (data.operation as string) === 'move' || (data.operation as string) === 'write_file') && (
+                  <div>
+                    <label className={labelStyles}>Destination</label>
+                    <input
+                      value={(data.destination as string) ?? ''}
+                      onChange={e => update('destination', e.target.value)}
+                      placeholder={
+                        (data.operation as string) === 'write_file'
+                          ? 'es. /path/to/output.txt'
+                          : 'es. /path/to/destination'
+                      }
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                {(data.operation as string) === 'delete' && (
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(data.confirm as boolean) ?? false}
+                        onChange={e => update('confirm', e.target.checked)}
+                        className="rounded bg-gray-800 border-gray-600"
+                      />
+                      Conferma eliminazione
+                    </label>
+                    <p className="text-[10px] text-red-400 mt-1">Obbligatorio per eseguire il delete.</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  Input: percorso file/cartella. Per write_file il contenuto arriva dal nodo precedente.
+                </p>
+              </>
+            )}
+
+            {/* Telegram Bot config */}
+            {(data.tool as string) === 'telegram_bot' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'send_message'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="send_message">Send Message</option>
+                    <option value="send_document">Send Document</option>
+                    <option value="send_photo">Send Photo</option>
+                    <option value="get_updates">Get Updates</option>
+                    <option value="get_chat_info">Get Chat Info</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Bot Token</label>
+                  <input
+                    type="password"
+                    value={(data.botToken as string) ?? ''}
+                    onChange={e => update('botToken', e.target.value)}
+                    placeholder="123456:ABC-DEF... (o da .env)"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Fallback: TELEGRAM_BOT_TOKEN nel .env</p>
+                </div>
+                <div>
+                  <label className={labelStyles}>Chat ID</label>
+                  <input
+                    value={(data.chatId as string) ?? ''}
+                    onChange={e => update('chatId', e.target.value)}
+                    placeholder="-100123456789"
+                    className={inputStyles}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Parse Mode</label>
+                  <select
+                    value={(data.parseMode as string) ?? 'Markdown'}
+                    onChange={e => update('parseMode', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="Markdown">Markdown</option>
+                    <option value="HTML">HTML</option>
+                    <option value="plain">Plain text</option>
+                  </select>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Input: testo del messaggio (send_message), path file (send_document/photo).
+                </p>
+              </>
+            )}
+
+            {/* WhatsApp config */}
+            {(data.tool as string) === 'whatsapp' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'send_message'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="send_message">Send Message</option>
+                    <option value="send_template">Send Template</option>
+                    <option value="send_document">Send Document (URL)</option>
+                    <option value="send_image">Send Image (URL)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Recipient Number</label>
+                  <input
+                    value={(data.recipient as string) ?? ''}
+                    onChange={e => update('recipient', e.target.value)}
+                    placeholder="39xxxxxxxxxx (con prefisso)"
+                    className={inputStyles}
+                  />
+                </div>
+                {(data.operation as string) === 'send_template' && (
+                  <div>
+                    <label className={labelStyles}>Template Name</label>
+                    <input
+                      value={(data.templateName as string) ?? ''}
+                      onChange={e => update('templateName', e.target.value)}
+                      placeholder="es. hello_world"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={labelStyles}>Access Token</label>
+                  <input
+                    type="password"
+                    value={(data.waToken as string) ?? ''}
+                    onChange={e => update('waToken', e.target.value)}
+                    placeholder="Meta access token (o da .env)"
+                    className={inputStyles}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Phone Number ID</label>
+                  <input
+                    value={(data.phoneNumberId as string) ?? ''}
+                    onChange={e => update('phoneNumberId', e.target.value)}
+                    placeholder="ID numero (da Meta Business)"
+                    className={inputStyles}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Fallback: WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID nel .env
+                </p>
+              </>
+            )}
+
+            {/* PyArchInit config */}
+            {(data.tool as string) === 'pyarchinit_tool' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'query_us'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="query_us">Query US (Unita Stratigrafiche)</option>
+                    <option value="query_inventory">Query Inventario Materiali</option>
+                    <option value="query_pottery">Query Ceramica</option>
+                    <option value="query_sites">Query Siti</option>
+                    <option value="query_structures">Query Strutture</option>
+                    <option value="query_tombs">Query Tombe</option>
+                    <option value="query_samples">Query Campioni</option>
+                    <option value="custom_query">Custom Query</option>
+                    <option value="list_tables">List Tables</option>
+                    <option value="export_csv">Export CSV</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Database Path</label>
+                  <input
+                    value={(data.dbPath as string) ?? ''}
+                    onChange={e => update('dbPath', e.target.value)}
+                    placeholder="~/.pyarchinit/pyarchinit_DB_folder/pyarchinit_db.sqlite"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Auto-detect se vuoto. Fallback: PYARCHINIT_DB_PATH</p>
+                </div>
+                <div>
+                  <label className={labelStyles}>DB Type</label>
+                  <select
+                    value={(data.dbType as string) ?? 'sqlite'}
+                    onChange={e => update('dbType', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="sqlite">SQLite</option>
+                    <option value="postgresql">PostgreSQL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Sito (filtro)</label>
+                  <input
+                    value={(data.sito as string) ?? ''}
+                    onChange={e => update('sito', e.target.value)}
+                    placeholder="es. Pompeii (vuoto = tutti)"
+                    className={inputStyles}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelStyles}>Area</label>
+                    <input
+                      value={(data.area as string) ?? ''}
+                      onChange={e => update('area', e.target.value)}
+                      placeholder="es. A"
+                      className={inputStyles}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>US</label>
+                    <input
+                      value={(data.us as string) ?? ''}
+                      onChange={e => update('us', e.target.value)}
+                      placeholder="es. 101"
+                      className={inputStyles}
+                    />
+                  </div>
+                </div>
+                {(data.operation as string) === 'custom_query' && (
+                  <div>
+                    <label className={labelStyles}>Custom Query (SQL)</label>
+                    <textarea
+                      value={(data.customQuery as string) ?? ''}
+                      onChange={e => update('customQuery', e.target.value)}
+                      rows={3}
+                      placeholder="SELECT * FROM us_table WHERE ..."
+                      className={`${inputStyles} resize-none font-mono text-xs`}
+                    />
+                    <p className="text-[10px] text-red-400 mt-1">Solo query SELECT (read-only).</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* QGIS Project config */}
+            {(data.tool as string) === 'qgis_project' && (
+              <>
+                <div>
+                  <label className={labelStyles}>Operation</label>
+                  <select
+                    value={(data.operation as string) ?? 'list_layers'}
+                    onChange={e => update('operation', e.target.value)}
+                    className={selectStyles}
+                  >
+                    <option value="list_layers">List Layers</option>
+                    <option value="project_info">Project Info</option>
+                    <option value="list_plugins">List Plugins</option>
+                    <option value="read_style">Read Style</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Project Path (.qgs / .qgz)</label>
+                  <input
+                    value={(data.projectPath as string) ?? ''}
+                    onChange={e => update('projectPath', e.target.value)}
+                    placeholder="/path/to/project.qgz"
+                    className={inputStyles}
+                  />
+                  <p className="text-[10px] text-gray-600 mt-1">Oppure passa il path dal nodo Input.</p>
+                </div>
+                {(data.operation as string) === 'read_style' && (
+                  <div>
+                    <label className={labelStyles}>Layer Name</label>
+                    <input
+                      value={(data.layerName as string) ?? ''}
+                      onChange={e => update('layerName', e.target.value)}
+                      placeholder="Nome del layer (vuoto = tutti)"
+                      className={inputStyles}
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  Parsing XML/ZIP senza dipendenza QGIS.
+                </p>
               </>
             )}
 
@@ -1145,6 +1898,183 @@ export function NodeConfig({ node, onClose, onUpdate }: Props) {
               </div>
             </div>
           </>
+        )}
+
+        {/* === DELAY === */}
+        {nodeType === 'delay' && (
+          <>
+            <div>
+              <label className={labelStyles}>Delay (seconds)</label>
+              <input
+                type="number"
+                min={0.1} max={300} step={0.5}
+                value={(data.delaySeconds as number) ?? 1}
+                onChange={e => update('delaySeconds', parseFloat(e.target.value))}
+                className={inputStyles}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Pausa tra nodi. Utile per rate limiting API o attese.
+            </p>
+          </>
+        )}
+
+        {/* === SWITCH === */}
+        {nodeType === 'switch' && (
+          <>
+            <div>
+              <label className={labelStyles}>Switch Type</label>
+              <select
+                value={(data.switchType as string) ?? 'keyword'}
+                onChange={e => update('switchType', e.target.value)}
+                className={selectStyles}
+              >
+                <option value="keyword">Keyword Match</option>
+                <option value="regex">Regex Match</option>
+                <option value="score">Score Threshold</option>
+              </select>
+            </div>
+            <p className="text-xs text-gray-500">
+              Collega piu edge in uscita. Ogni edge label = condizione.
+              L'input viene confrontato con le label. Edge "default" usato se nessun match.
+            </p>
+            <p className="text-[10px] text-gray-600">
+              Keyword: label presente nel testo. Regex: label come pattern. Score: label come soglia numerica.
+            </p>
+          </>
+        )}
+
+        {/* === VALIDATOR === */}
+        {nodeType === 'validator' && (
+          <>
+            <div>
+              <label className={labelStyles}>Model</label>
+              <select
+                value={(data.model as string) ?? 'claude-haiku-4-5-20251001'}
+                onChange={e => update('model', e.target.value)}
+                className={selectStyles}
+              >
+                <optgroup label="Anthropic">
+                  <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fast)</option>
+                  <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+                  <option value="claude-opus-4-6">Claude Opus 4.6</option>
+                </optgroup>
+                <optgroup label="OpenAI">
+                  <option value="gpt-4o-mini">GPT-4o mini (fast)</option>
+                  <option value="gpt-4o">GPT-4o</option>
+                </optgroup>
+                <optgroup label="Local (Ollama)">
+                  <option value="ollama:llama3.3">Llama 3.3</option>
+                  <option value="ollama:mistral">Mistral</option>
+                </optgroup>
+              </select>
+              <p className="text-[10px] text-gray-600 mt-0.5">Modello AI per la validazione. Haiku consigliato per velocita.</p>
+            </div>
+            <div>
+              <label className={labelStyles}>Validation Prompt</label>
+              <textarea
+                value={(data.validationPrompt as string) ?? ''}
+                onChange={e => update('validationPrompt', e.target.value)}
+                rows={4}
+                placeholder="Descrivi i criteri di validazione, es: il testo deve essere in italiano, almeno 200 parole, senza errori grammaticali..."
+                className={`${inputStyles} resize-none`}
+              />
+            </div>
+            <div>
+              <label className={labelStyles}>Strictness ({(data.strictness as number) ?? 7}/10)</label>
+              <input
+                type="range"
+                min={1} max={10} step={1}
+                value={(data.strictness as number) ?? 7}
+                onChange={e => update('strictness', parseInt(e.target.value, 10))}
+                className="w-full accent-emerald-500"
+              />
+              <div className="flex justify-between text-[10px] text-gray-600">
+                <span>Lenient</span>
+                <span>Strict</span>
+              </div>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={(data.includeContext as boolean) ?? false}
+                  onChange={e => update('includeContext', e.target.checked)}
+                  className="rounded bg-gray-800 border-gray-600"
+                />
+                Include Workflow Context
+              </label>
+              <p className="text-[10px] text-gray-600 mt-0.5">Se attivo, l'agente vede anche i nodi del workflow.</p>
+            </div>
+            <p className="text-xs text-gray-500">
+              Collega 2 edge: label "pass" e "fail". L'agente valida l'input e instrada il flusso.
+            </p>
+          </>
+        )}
+
+        {/* === RETRY / ERROR HANDLING (universal for agent + tool) === */}
+        {(nodeType === 'agent' || nodeType === 'tool') && (
+          <>
+            <div className="border-t border-gray-700 pt-3 mt-2">
+              <h4 className="text-xs text-gray-400 uppercase tracking-wide mb-2">Error Handling</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelStyles}>Retry Count</label>
+                <input
+                  type="number" min={0} max={5}
+                  value={(data.retryCount as number) ?? 0}
+                  onChange={e => update('retryCount', parseInt(e.target.value, 10))}
+                  className={inputStyles}
+                />
+              </div>
+              <div>
+                <label className={labelStyles}>Retry Delay (sec)</label>
+                <input
+                  type="number" min={1} max={60}
+                  value={(data.retryDelay as number) ?? 2}
+                  onChange={e => update('retryDelay', parseInt(e.target.value, 10))}
+                  className={inputStyles}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelStyles}>On Error</label>
+              <select
+                value={(data.onError as string) ?? 'stop'}
+                onChange={e => update('onError', e.target.value)}
+                className={selectStyles}
+              >
+                <option value="stop">Stop Workflow</option>
+                <option value="skip">Skip Node</option>
+                <option value="fallback">Use Fallback Value</option>
+              </select>
+            </div>
+            {(data.onError as string) === 'fallback' && (
+              <div>
+                <label className={labelStyles}>Fallback Value</label>
+                <input
+                  value={(data.fallbackValue as string) ?? ''}
+                  onChange={e => update('fallbackValue', e.target.value)}
+                  placeholder="Valore di default se il nodo fallisce"
+                  className={inputStyles}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* === VARIABLE STORE (universal) === */}
+        {(nodeType === 'agent' || nodeType === 'tool' || nodeType === 'input') && (
+          <div className="border-t border-gray-700 pt-3 mt-2">
+            <label className={labelStyles}>Save Output as Variable</label>
+            <input
+              value={(data.setVariable as string) ?? ''}
+              onChange={e => update('setVariable', e.target.value)}
+              placeholder="es. risultato_ricerca (accedi con {var:nome})"
+              className={inputStyles}
+            />
+          </div>
         )}
 
         {/* Save button */}
