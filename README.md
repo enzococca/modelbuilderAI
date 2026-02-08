@@ -8,6 +8,14 @@
   <em>Build, execute, and manage AI agent pipelines through a visual drag-and-drop interface.<br/>Connect AI models, tools, and logic nodes into complex workflows — then run them with real-time streaming output.</em>
 </p>
 
+<p align="center">
+  <img src="frontend/public/demo-builder.gif" alt="Gennaro Demo — Interface" width="720" />
+</p>
+
+<p align="center">
+  <img src="frontend/public/demo-chat.gif" alt="Gennaro Demo — Chat & Workflows" width="720" />
+</p>
+
 ## Features
 
 - **Visual Workflow Builder** — Drag-and-drop canvas powered by React Flow. Create pipelines by connecting nodes with edges.
