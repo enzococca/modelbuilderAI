@@ -665,6 +665,19 @@ class WorkflowEngine:
                     config["band"] = data["band"]
                 if data.get("layer"):
                     config["layer"] = data["layer"]
+                # Coordinate map params
+                if data.get("zoom"):
+                    config["zoom"] = data["zoom"]
+                if data.get("mapType"):
+                    config["mapType"] = data["mapType"]
+                if data.get("addMarker") is not None:
+                    config["addMarker"] = data["addMarker"]
+                if data.get("markerLabel"):
+                    config["markerLabel"] = data["markerLabel"]
+                # Use coordinates field as input_text if present
+                coords = _get(data, "coordinates", "coords", "")
+                if coords:
+                    input_text = coords.replace("{input}", input_text)
 
             elif tool_name == "file_search":
                 config["source"] = data.get("source", "local")

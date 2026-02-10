@@ -487,8 +487,26 @@ class GISTool(BaseTool):
             f"Total buffered area: {buffered.to_crs(epsg=3857).geometry.area.sum():,.2f} m^2"
         )
 
+    @staticmethod
+    def _parse_coordinates(text: str) -> tuple[float, float] | None:
+        """Try to parse 'lat,lon' from text. Returns (lat, lon) or None."""
+        import re
+        text = text.strip()
+        # Match patterns like "11.464442,76.933892" or "11.464442, 76.933892"
+        m = re.match(r'^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$', text)
+        if m:
+            lat, lon = float(m.group(1)), float(m.group(2))
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                return lat, lon
+        return None
+
     def _render_map(self, input_text: str, **kwargs: Any) -> str:
-        """Render a map from vector or raster data."""
+        """Render a map from coordinates, vector, or raster data."""
+        # Check if input is coordinates (lat,lon) rather than a file path
+        coords = self._parse_coordinates(input_text)
+        if coords is not None:
+            return self._render_coordinate_map(coords, **kwargs)
+
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
@@ -506,6 +524,57 @@ class GISTool(BaseTool):
         else:
             layer = kwargs.get("layer")
             return self._render_vector_map(path, title, cmap, column, layer=layer)
+
+    def _render_coordinate_map(self, coords: tuple[float, float], **kwargs: Any) -> str:
+        """Create an interactive HTML map centered on coordinates using folium."""
+        import folium
+
+        lat, lon = coords
+        zoom = int(kwargs.get("zoom", 12))
+        map_type = kwargs.get("mapType", kwargs.get("map_type", "openstreetmap"))
+        add_marker = kwargs.get("addMarker", kwargs.get("add_marker", True))
+        marker_label = kwargs.get("markerLabel", kwargs.get("marker_label", "Location"))
+        title = kwargs.get("title", marker_label)
+
+        # Map tile providers
+        tiles_map = {
+            "satellite": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            "terrain": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+            "openstreetmap": "OpenStreetMap",
+        }
+        attr_map = {
+            "satellite": "Esri World Imagery",
+            "terrain": "OpenTopoMap",
+        }
+
+        tile_url = tiles_map.get(map_type, "OpenStreetMap")
+        tile_attr = attr_map.get(map_type)
+
+        if tile_url in ("OpenStreetMap",):
+            m = folium.Map(location=[lat, lon], zoom_start=zoom, tiles=tile_url)
+        else:
+            m = folium.Map(location=[lat, lon], zoom_start=zoom,
+                           tiles=tile_url, attr=tile_attr)
+
+        if add_marker:
+            folium.Marker(
+                [lat, lon],
+                popup=f"<b>{marker_label}</b><br/>{lat:.6f}, {lon:.6f}",
+                tooltip=marker_label,
+                icon=folium.Icon(color="red", icon="info-sign"),
+            ).add_to(m)
+
+        html_content = m._repr_html_()
+
+        return (
+            f"**Map**: {title}\n"
+            f"- Coordinates: {lat:.6f}, {lon:.6f}\n"
+            f"- Zoom: {zoom}\n"
+            f"- Tiles: {map_type}\n\n"
+            f"```artifact\n"
+            + json.dumps({"type": "html", "name": f"{title}.html", "data": html_content})
+            + "\n```"
+        )
 
     def _render_vector_map(self, path: Path, title: str, cmap: str, column: str, layer: str | None = None) -> str:
         """Render an interactive map from vector data using GeoJSON."""

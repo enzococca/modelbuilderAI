@@ -49,5 +49,8 @@ beautifulsoup4>=4.12.0
 # Charts
 plotly>=5.18.0
 
+# GIS / Maps
+folium>=0.20.0
+
 # Utilities
 rich>=13.0.0
